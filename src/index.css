@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-patrick: 'Patrick Hand', cursive, sans-serif;
+    --font-caveat: 'Caveat', cursive, sans-serif;
+    --font-amatic: 'Amatic SC', cursive, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-patrick);
+    touch-action: manipulation;
+    overflow-x: hidden;
+  }
+}
+
+.font-patrick {
+  font-family: 'Patrick Hand', cursive, sans-serif;
+}
+
+.font-caveat {
+  font-family: 'Caveat', cursive, sans-serif;
+}
+
+.font-amatic {
+  font-family: 'Amatic SC', cursive, sans-serif;
+}
+
+/* Paper Texture Background */
+.paper-texture {
+  background-color: #f8f7f4;
+  background-image: 
+    radial-gradient(#e5dec9 0.75px, transparent 0.75px),
+    radial-gradient(#e5dec9 0.75px, #f8f7f4 0.75px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+/* Floating animation */
+@keyframes softFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(4deg);
+  }
+}
+
+.animate-soft-float {
+  animation: softFloat 4s ease-in-out infinite;
+}
+
+@keyframes loveDrift {
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(0.7) rotate(-10deg);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-45px) scale(1.1) rotate(10deg);
+  }
+}
+
+.animate-love-drift {
+  animation: loveDrift 4s ease-in-out infinite;
+}
+
+/* Romantic Heartbeat Pulse */
+@keyframes heartBeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.26);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.18);
+  }
+  70% {
+    transform: scale(1);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartBeat 1.3s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1efe9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #f4a2cf;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e879b9;
+}
+

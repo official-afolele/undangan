@@ -1,0 +1,8 @@
+{
+  "name": "Undangan Pernikahan Jaka & Dian",
+  "description": "Undangan pernikahan digital responsif dan ramah seluler untuk The Wedding of Jaka & Dian dengan tema kertas bertekstur, musik, kalender, hitung mundur, dan buku tamu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
