@@ -25,7 +25,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
       setErrorMsg('Silakan masukkan kata sandi pengelola.');
       return;
     }
-
+    
     if (validateAdminPassword(cleaned, currentPassword)) {
       setErrorMsg(null);
       onLoginSuccess(rememberMe);
