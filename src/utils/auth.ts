@@ -3,7 +3,7 @@
  * Handles resilient cross-browser, cross-device, and mobile-friendly validation.
  */
 
-export const DEFAULT_ADMIN_PASSWORD = 'jakadian2026';
+export const DEFAULT_ADMIN_PASSWORD = 'jundol2026@';
 export const ADMIN_AUTH_STORAGE_KEY = 'wedding_admin_authenticated';
 export const ADMIN_PASSWORD_STORAGE_KEY = 'wedding_admin_password';
 
