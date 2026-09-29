@@ -336,10 +336,7 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3.5 border-b border-[#edf2f7] pb-3">
             <div className="flex items-center gap-2 font-patrick text-base sm:text-lg font-bold text-[#5797d0]">
               <Heart className="w-5 h-5 text-[#ef72b4] fill-[#ef72b4]" />
-              <span>{wishes.length} Ucapan Diterima</span>
-              <span className="text-xs bg-[#eef5fa] text-[#527595] px-2 py-0.5 rounded-full font-semibold">
-                {totalHadir} Hadir
-              </span>
+              <span>Ucapan Diterima</span>
             </div>
 
             {/* Filter buttons */}
