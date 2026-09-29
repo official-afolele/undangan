@@ -123,21 +123,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const fetchAdminWishes = async () => {
     setIsLoadingWishes(true);
+
+    const targetScriptUrl = (formData.googleScriptUrl && formData.googleScriptUrl.startsWith('http'))
+      ? formData.googleScriptUrl
+      : 'https://script.google.com/macros/s/AKfycby6h1lOSpTyczUj5Bsyu3n0W3AnlZuME1Cn4V2WFfpNQeGj6v_3poNiZScPbButlpVf/exec';
+
+    // 1. Ambil langsung dari Google Spreadsheet
+    if (targetScriptUrl) {
+      try {
+        const scriptRes = await fetch(`${targetScriptUrl}?action=get_wishes`);
+        if (scriptRes.ok) {
+          const data = await scriptRes.json();
+          if (data && Array.isArray(data.wishes)) {
+            setWishesList(data.wishes);
+            try {
+              localStorage.setItem('wedding_wishes_jaka_dian', JSON.stringify(data.wishes));
+            } catch {}
+            setIsLoadingWishes(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Gagal memuat ucapan dari Google Script:', err);
+      }
+    }
+
+    // 2. Fallback dari penyimpanan lokal
     try {
-      const res = await fetch('/api/wishes');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setWishesList(data);
+      const saved = localStorage.getItem('wedding_wishes_jaka_dian');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setWishesList(parsed);
+          setIsLoadingWishes(false);
+          return;
         }
       }
-    } catch (err) {
-      console.warn('Gagal memuat ucapan di Admin Panel:', err);
-    } finally {
-      setIsLoadingWishes(false);
-    }
-  };
+    } catch {}
 
+    setIsLoadingWishes(false);
+  };
   useEffect(() => {
     fetchAdminWishes();
   }, []);
@@ -160,6 +185,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       console.error('Gagal menghapus wish:', err);
       setWishesList((prev) => prev.filter((w) => w.id !== id));
     }
+  };
+
+  // State & Handler Edit Ucapan
+  const [editingWish, setEditingWish] = useState<WishEntry | null>(null);
+
+  const handleSaveEditWish = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWish) return;
+
+    const updated = wishesList.map((w) => (w.id === editingWish.id ? editingWish : w));
+    setWishesList(updated);
+    try {
+      localStorage.setItem('wedding_wishes_jaka_dian', JSON.stringify(updated));
+    } catch {}
+
+    setEditingWish(null);
+    alert(`Ucapan dari "${editingWish.name}" berhasil diperbarui!`);
   };
 
   // Photo upload & error states
@@ -2753,6 +2795,34 @@ Hormat kami,
                                 title="Hapus Tamu"
                               >
                                 <Trash2 className="w-4 h-4" />
+                                <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => {
+          const newMsg = prompt(`Edit ucapan dari "${wish.name}":`, wish.message);
+          if (newMsg !== null && newMsg.trim() !== '') {
+            const updated = wishesList.map((w) => w.id === wish.id ? { ...w, message: newMsg.trim() } : w);
+            setWishesList(updated);
+            try {
+              localStorage.setItem('wedding_wishes_jaka_dian', JSON.stringify(updated));
+            } catch {}
+          }
+        }}
+        title="Edit teks ucapan ini"
+        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+      >
+        ✏️
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleDeleteWish(wish.id, wish.name)}
+        title="Hapus ucapan ini"
+        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
                               </button>
                             </td>
                           </tr>
