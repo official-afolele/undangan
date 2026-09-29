@@ -2766,7 +2766,7 @@ Hormat kami,
           </div>
         )}
 
-        {/* TAB 6: UCAPAN & RSVP */}
+       {/* TAB 6: UCAPAN & RSVP */}
         {activeTab === 'ucapan' && (
           <div className="space-y-5">
             {/* Header & Metrics */}
@@ -2792,8 +2792,6 @@ Hormat kami,
                   <span>Segarkan Data</span>
                 </button>
               </div>
-          </div>
-        )}
 
               {/* Stat Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
@@ -2823,7 +2821,6 @@ Hormat kami,
 
               {/* Filters & Search */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                {/* Search */}
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                   <input
@@ -2835,7 +2832,6 @@ Hormat kami,
                   />
                 </div>
 
-                {/* Filter buttons */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {(['semua', 'hadir', 'ragu', 'tidak'] as const).map((cat) => (
                     <button
@@ -2929,7 +2925,7 @@ Hormat kami,
           </div>
         )}
 
-{/* TAB 7: BUKU TAMU & GOOGLE SHEETS */}
+        {/* TAB 7: BUKU TAMU & GOOGLE SHEETS */}
         {activeTab === 'google_script' && (
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-[#0f7b40] to-[#13944d] text-white p-5 rounded-2xl shadow-md">
