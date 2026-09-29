@@ -83,29 +83,7 @@ export const weddingData: WeddingConfig = {
   audioUrl: 'https://wedding-invitations-chi.vercel.app/audio/cinta_terakhir_cover1.mp3'
 };
 
-export const initialWishes: WishEntry[] = [
-  {
-    id: '1',
-    name: 'Budi Santoso & Keluarga',
-    message: 'Barakallahu lakuma wa baraka alaikuma wa jamaa bainakuma fii khoir. Selamat menempuh hidup baru Jaka & Dian!',
-    attendance: 'hadir',
-    timestamp: '2 jam yang lalu'
-  },
-  {
-    id: '2',
-    name: 'Siti Rahmawati',
-    message: 'Selamat berbahagia Dian & Jaka! Semoga menjadi keluarga yang sakinah, mawaddah, warahmah. Aamiin ya rabbal alamin.',
-    attendance: 'hadir',
-    timestamp: '5 jam yang lalu'
-  },
-  {
-    id: '3',
-    name: 'Rizky Firmansyah',
-    message: 'Selamat buat Jaka dan Dian! Semoga lancar sampai hari H dan senantiasa diberkahi kebahagiaan.',
-    attendance: 'hadir',
-    timestamp: '1 hari yang lalu'
-  }
-];
+export const initialWishes: WishEntry[] = [];
 
 export const initialGuests: GuestItem[] = [
   { id: '1', name: 'Bapak Andi & Keluarga', category: 'VIP', note: 'Kerabat dekat' },
