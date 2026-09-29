@@ -1023,6 +1023,17 @@ Hormat kami,
             }}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'ucapan'
+              <button
+            type="button"
+            onClick={() => setActiveTab('google_script')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              activeTab === 'google_script'
+                ? 'bg-[#0f7b40] text-white shadow-md'
+                : 'bg-emerald-50 text-[#0f7b40] hover:bg-emerald-100 border border-emerald-300'
+            }`}
+          >
+            <span>📗 Buku Tamu (Google Sheets)</span>
+          </button>
                 ? 'bg-[#ec79b8] text-white shadow-xs'
                 : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
             }`}
@@ -2768,6 +2779,36 @@ Hormat kami,
                   <p className="text-xs sm:text-sm text-[#718096] mt-0.5">
                     Daftar ucapan, doa restu, dan status kehadiran dari tamu undangan secara real-time.
                   </p>
+                  {activeTab === 'google_script' && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-[#0f7b40] to-[#13944d] text-white p-5 rounded-2xl shadow-md flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <span>📗 Integrasi Buku Tamu & Google Sheets</span>
+                </h2>
+                <p className="text-xs text-emerald-100 mt-1">
+                  Sinkronisasi ucapan, konfirmasi kehadiran (RSVP), dan buku tamu langsung ke Google Spreadsheet.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-gray-200 space-y-4">
+              <label className="block text-sm font-bold text-gray-700">
+                URL Aplikasi Web Google Apps Script (berakhiran /exec):
+              </label>
+              <input
+                type="text"
+                value={formData.googleScriptUrl || ''}
+                onChange={(e) => setFormData({ ...formData, googleScriptUrl: e.target.value })}
+                placeholder="https://script.google.com/macros/s/.../exec"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
+              />
+              <p className="text-xs text-gray-500">
+                Tempelkan URL Google Apps Script yang sudah Anda deploy ke kolom di atas, lalu klik <b>Simpan Data</b> di pojok kanan atas layar.
+              </p>
+            </div>
+          </div>
+        )}
                 </div>
 
                 <button
