@@ -18,7 +18,6 @@ interface WishesRsvpSectionProps {
 }
 
 const STORAGE_KEY = 'wedding_wishes_jaka_dian';
-// URL Google Apps Script Buku Tamu Jaka & Dian
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6h1lOSpTyczUj5Bsyu3n0W3AnlZuME1Cn4V2WFfpNQeGj6v_3poNiZScPbButlpVf/exec';
 
 export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({ 
@@ -32,7 +31,7 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
   const [wishes, setWishes] = useState<WishEntry[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved !== null) {
+      if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
@@ -59,10 +58,11 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
   const wishListRef = useRef<HTMLDivElement>(null);
   const wishesSectionRef = useRef<HTMLDivElement>(null);
 
-  // Ambil ucapan terbaru langsung dari Google Spreadsheet
+  // Ambil ucapan terbaru langsung dari Google Spreadsheet / Server
   const fetchWishes = async (showSpinner = false) => {
     if (showSpinner) setIsRefreshing(true);
 
+    // 1. Ambil dari Google Apps Script Web App
     if (activeScriptUrl) {
       try {
         const res = await fetch(`${activeScriptUrl}?action=get_wishes`);
@@ -82,6 +82,7 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
       }
     }
 
+    // 2. Cadangan ke server lokal
     try {
       const res = await fetch('/api/wishes');
       if (res.ok) {
@@ -95,11 +96,12 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
         }
       }
     } catch (err) {
-      console.warn('Gagal memuat ucapan dari server lokal:', err);
+      console.warn('Gagal memuat ucapan dari server:', err);
     } finally {
       if (showSpinner) setIsRefreshing(false);
     }
 
+    // 3. Cadangan localStorage
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved !== null) {
@@ -176,7 +178,7 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
       }
     }, 100);
 
-    // 2. Kirim langsung ke Google Spreadsheet via Apps Script
+    // 2. Kirim otomatis ke Google Spreadsheet
     if (activeScriptUrl) {
       try {
         fetch(activeScriptUrl, {
@@ -200,9 +202,11 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newWish),
       });
-    } catch {}
-
-    setIsSubmitting(false);
+    } catch (err) {
+      console.warn('Gagal sinkronisasi wish ke server:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
 
     setTimeout(() => {
       setSubmittedToast(false);
@@ -230,7 +234,7 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
           Berikan doa restu dan konfirmasi kehadiran Anda untuk mempelai.
         </p>
 
-        {/* FORM CARD */}
+        {/* FORM CARD (PERSIS SEPERTI GAMBAR PERTAMA) */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-md border border-[#5797d0]/20 text-left mb-6 relative">
           <div className="flex items-center gap-2 mb-4 text-[#5797d0] font-patrick font-bold text-lg sm:text-xl border-b border-[#edf2f7] pb-3">
             <MessageSquareHeart className="w-5 h-5 text-[#ef72b4]" />
@@ -264,51 +268,24 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
             </div>
 
             <div>
-              <label className="block font-patrick text-sm font-semibold text-[#527595] mb-1.5">
+              <label htmlFor="guest-attendance-select" className="block font-patrick text-sm font-semibold text-[#527595] mb-1">
                 Konfirmasi Kehadiran:
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAttendance('hadir')}
-                  className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-patrick font-bold transition-all border flex items-center justify-center gap-1 cursor-pointer ${
-                    attendance === 'hadir'
-                      ? 'bg-emerald-500 text-white border-emerald-500 shadow-xs'
-                      : 'bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                  }`}
-                >
-                  <span>✓ Hadir</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAttendance('ragu')}
-                  className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-patrick font-bold transition-all border flex items-center justify-center gap-1 cursor-pointer ${
-                    attendance === 'ragu'
-                      ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                      : 'bg-amber-50/70 text-amber-800 border-amber-200 hover:bg-amber-100'
-                  }`}
-                >
-                  <span>? Ragu</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAttendance('tidak')}
-                  className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-patrick font-bold transition-all border flex items-center justify-center gap-1 cursor-pointer ${
-                    attendance === 'tidak'
-                      ? 'bg-rose-500 text-white border-rose-500 shadow-xs'
-                      : 'bg-rose-50/70 text-rose-800 border-rose-200 hover:bg-rose-100'
-                  }`}
-                >
-                  <span>✗ Maaf</span>
-                </button>
-              </div>
+              <select
+                id="guest-attendance-select"
+                value={attendance}
+                onChange={(e) => setAttendance(e.target.value as 'hadir' | 'ragu' | 'tidak')}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2e3f3] focus:border-[#5797d0] focus:ring-2 focus:ring-[#5797d0]/20 outline-none font-patrick text-base text-[#2d3748] transition-all bg-white cursor-pointer"
+              >
+                <option value="hadir">✓ Ya, Saya Akan Hadir</option>
+                <option value="ragu">? Masih Ragu / Belum Pasti</option>
+                <option value="tidak">✗ Maaf, Belum Bisa Hadir</option>
+              </select>
             </div>
 
             <div>
               <label htmlFor="guest-message-input" className="block font-patrick text-sm font-semibold text-[#527595] mb-1">
-                Doa & Ucapan:
+                Ucapan & Doa Restu:
               </label>
               <textarea
                 id="guest-message-input"
@@ -319,7 +296,7 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
                   setMessage(e.target.value);
                   if (formError) setFormError(null);
                 }}
-                placeholder="Tuliskan ucapan dan doa restu terbaik untuk kedua mempelai..."
+                placeholder="Tuliskan doa restu dan harapan terbaik untuk kedua mempelai..."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2e3f3] focus:border-[#5797d0] focus:ring-2 focus:ring-[#5797d0]/20 outline-none font-patrick text-base text-[#2d3748] transition-all bg-white resize-none"
               />
             </div>
@@ -327,163 +304,156 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 rounded-xl bg-linear-to-r from-[#5797d0] to-[#ec79b8] hover:opacity-95 text-white font-patrick font-bold text-lg shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              className="w-full min-h-[46px] rounded-xl bg-[#ec79b8] hover:bg-[#d866a4] active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed text-white font-amatic text-2xl font-bold tracking-wider shadow-[0_4px_0_#bd4a89] active:shadow-[0_1px_0_#bd4a89] active:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Mengirimkan Ucapan...</span>
+                  <span>MENYIMPAN UCAPAN...</span>
                 </>
               ) : (
                 <>
-                  <Send className="w-5 h-5" />
-                  <span>Kirim Ucapan & Konfirmasi</span>
+                  <Send className="w-4 h-4" />
+                  <span>KIRIM UCAPAN & DOA</span>
                 </>
               )}
             </button>
           </form>
 
           {submittedToast && (
-            <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200 text-green-800 flex items-center gap-2 text-xs sm:text-sm font-patrick animate-fade-in">
-              <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-              <span>Terima kasih! Ucapan dan konfirmasi kehadiran Anda berhasil tersimpan.</span>
+            <div className="mt-3.5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start gap-2.5 font-patrick text-sm shadow-xs animate-in fade-in">
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
+              <div>
+                <strong className="block text-emerald-900 font-bold">Alhamdulillah, Ucapan Berhasil Dikirim!</strong>
+                <span>Ucapan Anda telah tersimpan dan langsung tampil di kolom Ucapan Diterima di bawah ini.</span>
+              </div>
             </div>
           )}
         </div>
 
-        {/* METRICS & FILTER BAR */}
-        <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-3 sm:p-4 mb-4 border border-[#e2e8f0] shadow-2xs">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <span className="font-patrick font-bold text-sm sm:text-base text-[#2d3748] flex items-center gap-1.5">
-              <span>💌 Doa Restu & Ucapan</span>
-              <span className="text-xs bg-[#5797d0]/15 text-[#5797d0] px-2 py-0.5 rounded-full font-sans">
-                {wishes.length}
+        {/* WISHES LIST CONTAINER (SESUAI GAMBAR PERTAMA) */}
+        <div className="text-left bg-white/60 p-4 sm:p-5 rounded-2xl border border-[#5797d0]/15 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3.5 border-b border-[#edf2f7] pb-3">
+            <div className="flex items-center gap-2 font-patrick text-base sm:text-lg font-bold text-[#5797d0]">
+              <Heart className="w-5 h-5 text-[#ef72b4] fill-[#ef72b4]" />
+              <span>{wishes.length} Ucapan Diterima</span>
+              <span className="text-xs bg-[#eef5fa] text-[#527595] px-2 py-0.5 rounded-full font-semibold">
+                {totalHadir} Hadir
               </span>
-            </span>
-
-            <button
-              type="button"
-              onClick={() => fetchWishes(true)}
-              disabled={isRefreshing}
-              className="px-2.5 py-1 rounded-lg text-xs font-patrick font-semibold text-[#527595] hover:bg-gray-100 flex items-center gap-1 cursor-pointer transition-colors"
-              title="Segarkan ucapan terbaru"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>Segarkan</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-4 gap-1.5 font-patrick text-xs sm:text-sm">
-            <button
-              type="button"
-              onClick={() => setFilter('semua')}
-              className={`p-1.5 rounded-xl border transition-all text-center cursor-pointer ${
-                filter === 'semua'
-                  ? 'bg-[#5797d0] text-white border-[#5797d0] shadow-xs'
-                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <div className="font-bold">{wishes.length}</div>
-              <div className="text-[10px]">Semua</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilter('hadir')}
-              className={`p-1.5 rounded-xl border transition-all text-center cursor-pointer ${
-                filter === 'hadir'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-              }`}
-            >
-              <div className="font-bold">{totalHadir}</div>
-              <div className="text-[10px]">Hadir</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilter('ragu')}
-              className={`p-1.5 rounded-xl border transition-all text-center cursor-pointer ${
-                filter === 'ragu'
-                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                  : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-              }`}
-            >
-              <div className="font-bold">{totalRagu}</div>
-              <div className="text-[10px]">Ragu</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilter('tidak')}
-              className={`p-1.5 rounded-xl border transition-all text-center cursor-pointer ${
-                filter === 'tidak'
-                  ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                  : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
-              }`}
-            >
-              <div className="font-bold">{totalTidak}</div>
-              <div className="text-[10px]">Maaf</div>
-            </button>
-          </div>
-        </div>
-
-        {/* WISHES LIST CONTAINER */}
-        <div
-          ref={wishListRef}
-          className="space-y-3 max-h-[420px] overflow-y-auto pr-1 text-left scrollbar-thin scrollbar-thumb-[#5797d0]/20"
-        >
-          {filteredWishes.length === 0 ? (
-            <div className="bg-white/80 rounded-2xl p-6 text-center text-gray-500 font-patrick border border-[#e2e8f0]">
-              Belum ada ucapan pada kategori ini. Jadilah yang pertama memberikan doa restu!
             </div>
-          ) : (
-            filteredWishes.map((w) => {
-              const isNewlyAdded = w.id === newlyAddedId;
 
-              return (
-                <div
-                  key={w.id}
-                  className={`bg-white rounded-2xl p-4 shadow-2xs border transition-all ${
-                    isNewlyAdded
-                      ? 'border-emerald-400 bg-emerald-50/30 ring-2 ring-emerald-200'
-                      : 'border-[#e2e8f0] hover:border-[#5797d0]/30'
+            {/* Filter buttons */}
+            <div className="flex items-center gap-1 text-xs font-patrick flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFilter('semua')}
+                className={`px-2.5 py-1 rounded-lg transition-colors font-semibold cursor-pointer ${
+                  filter === 'semua' ? 'bg-[#5797d0] text-white shadow-xs' : 'bg-white text-[#527595] hover:bg-[#eaf1f7]'
+                }`}
+              >
+                Semua ({wishes.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter('hadir')}
+                className={`px-2.5 py-1 rounded-lg transition-colors font-semibold cursor-pointer ${
+                  filter === 'hadir' ? 'bg-green-600 text-white shadow-xs' : 'bg-white text-[#527595] hover:bg-[#eaf1f7]'
+                }`}
+              >
+                Hadir ({totalHadir})
+              </button>
+              {totalRagu > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFilter('ragu')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors font-semibold cursor-pointer ${
+                    filter === 'ragu' ? 'bg-amber-600 text-white shadow-xs' : 'bg-white text-[#527595] hover:bg-[#eaf1f7]'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-patrick font-bold text-base text-[#2d3748]">
-                        {w.name}
-                      </span>
+                  Ragu ({totalRagu})
+                </button>
+              )}
+              {totalTidak > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFilter('tidak')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors font-semibold cursor-pointer ${
+                    filter === 'tidak' ? 'bg-red-600 text-white shadow-xs' : 'bg-white text-[#527595] hover:bg-[#eaf1f7]'
+                  }`}
+                >
+                  Tidak ({totalTidak})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => fetchWishes(true)}
+                title="Perbarui daftar ucapan"
+                className="p-1 rounded-lg bg-white text-[#527595] hover:bg-[#eaf1f7] transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#5797d0]' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable list */}
+          <div 
+            ref={wishListRef}
+            id="wish-list-container"
+            className="max-h-[360px] overflow-y-auto space-y-3 pr-1.5 scroll-smooth"
+          >
+            {filteredWishes.length === 0 ? (
+              <div className="bg-white rounded-xl p-6 text-center text-[#527595] font-patrick border border-dashed border-[#d2e3f3]">
+                Belum ada ucapan untuk kategori ini. Jadilah yang pertama mengirimkan ucapan dan doa restu!
+              </div>
+            ) : (
+              filteredWishes.map((item) => {
+                const isJustAdded = newlyAddedId === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    className={`rounded-xl p-3.5 sm:p-4 shadow-xs transition-all relative ${
+                      isJustAdded
+                        ? 'bg-[#f3f9fe] border-2 border-[#5797d0] ring-2 ring-[#5797d0]/20'
+                        : 'bg-white border border-[#5797d0]/12 hover:border-[#5797d0]/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-patrick font-bold text-base sm:text-lg text-[#2d3748]">
+                          {item.name}
+                        </span>
+                        {isJustAdded && (
+                          <span className="flex items-center gap-1 text-[11px] font-patrick font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                            <Sparkles className="w-3 h-3 text-emerald-600" /> Baru Saja
+                          </span>
+                        )}
+                      </div>
                       <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full font-sans ${
-                          w.attendance === 'hadir'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : w.attendance === 'ragu'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-rose-100 text-rose-800'
+                        className={`text-[11px] font-patrick px-2.5 py-0.5 rounded-full font-semibold shrink-0 ${
+                          item.attendance === 'hadir'
+                            ? 'bg-green-100 text-green-700 border border-green-200'
+                            : item.attendance === 'ragu'
+                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                            : 'bg-red-100 text-red-700 border border-red-200'
                         }`}
                       >
-                        {w.attendance === 'hadir'
-                          ? '✓ Hadir'
-                          : w.attendance === 'ragu'
-                          ? '? Ragu-ragu'
-                          : '✗ Tidak Hadir'}
+                        {item.attendance === 'hadir' ? '✓ Hadir' : item.attendance === 'ragu' ? '? Ragu-ragu' : '✗ Tidak Hadir'}
                       </span>
                     </div>
 
-                    <span className="text-[10px] text-gray-400 shrink-0 font-sans">
-                      {w.timestamp}
-                    </span>
-                  </div>
+                    <p className="font-patrick text-sm sm:text-base text-[#4a5568] leading-relaxed break-words whitespace-pre-line">
+                      {item.message}
+                    </p>
 
-                  <p className="font-patrick text-sm sm:text-base text-[#4a5568] whitespace-pre-line leading-relaxed">
-                    {w.message}
-                  </p>
-                </div>
-              );
-            })
-          )}
+                    <div className="text-[11px] text-[#718096] font-patrick mt-2 flex items-center justify-between">
+                      <span className="text-[#a0aec0]">Doa Restu Tamu</span>
+                      <span>{item.timestamp}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </section>
