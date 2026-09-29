@@ -30,8 +30,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
       setErrorMsg(null);
       onLoginSuccess(rememberMe);
     } else {
-      setErrorMsg('Kata sandi salah! Periksa huruf besar/kecil atau gunakan sandi bawaan (jakadian2026).');
-    }
+  setErrorMsg('Kata sandi salah! Periksa huruf besar/kecil');
+}
   };
 
   const handleFillDefault = () => {
@@ -58,22 +58,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
           </p>
         </div>
 
-        {/* Error Alert */}
-        {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-shake">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 shrink-0 text-red-500" />
-              <span>{errorMsg}</span>
-            </div>
-            <button
-              type="button"
-              onClick={handleFillDefault}
-              className="self-start sm:self-auto px-2 py-1 rounded bg-red-100 hover:bg-red-200 text-red-800 text-[11px] font-bold cursor-pointer transition-colors"
-            >
-              Coba Sandi Bawaan
-            </button>
-          </div>
-        )}
+        {/* Alert Pesan Error Bersih */}
+{errorMsg && (
+  <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-shake">
+    <ShieldAlert className="w-4 h-4 shrink-0 text-red-500" />
+    <span>{errorMsg}</span>
+  </div>
+)}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
