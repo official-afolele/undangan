@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { WeddingConfig, GuestItem, WishEntry } from '../types';
 import { weddingData } from '../data/weddingData';
+import { 
   ArrowLeft, 
-  Save, 
+  Save,
   RotateCcw, 
   Plus, 
   Trash2, 
@@ -2313,10 +2314,13 @@ Hormat kami,
                       <span>Simpan Perubahan Cerita</span>
                     </>
                   )}
-                </button>
+               </button>
               </div>
             </div>
+          </div>
         )}
+
+        {/* TAB 4: HADIAH & REKENING */}
 
         {/* TAB 4: HADIAH & REKENING */}
         {activeTab === 'kado' && (
@@ -2905,7 +2909,7 @@ Hormat kami,
                                 </button>
                               </div>
                             </td>
-                            <td className="py-3 px-3 text-center">
+                           <td className="py-3 px-3 text-center">
                               <button
                                 type="button"
                                 onClick={() => handleDeleteGuest(guest.id, guest.name)}
@@ -2913,34 +2917,6 @@ Hormat kami,
                                 title="Hapus Tamu"
                               >
                                 <Trash2 className="w-4 h-4" />
-                                <div className="flex items-center gap-1">
-      <button
-        type="button"
-        onClick={() => {
-          const newMsg = prompt(`Edit ucapan dari "${wish.name}":`, wish.message);
-          if (newMsg !== null && newMsg.trim() !== '') {
-            const updated = wishesList.map((w) => w.id === wish.id ? { ...w, message: newMsg.trim() } : w);
-            setWishesList(updated);
-            try {
-              localStorage.setItem('wedding_wishes_jaka_dian', JSON.stringify(updated));
-            } catch {}
-          }
-        }}
-        title="Edit teks ucapan ini"
-        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-      >
-        ✏️
-      </button>
-
-      <button
-        type="button"
-        onClick={() => handleDeleteWish(wish.id, wish.name)}
-        title="Hapus ucapan ini"
-        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
-    </div>
                               </button>
                             </td>
                           </tr>
