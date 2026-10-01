@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WeddingConfig, GuestItem, WishEntry } from '../types';
-import { 
+import { weddingData } from '../data/weddingData';
   ArrowLeft, 
   Save, 
   RotateCcw, 
