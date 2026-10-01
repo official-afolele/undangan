@@ -2147,18 +2147,96 @@ Hormat kami,
 
             {/* Love Story Milestones */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
-              <h2 className="text-lg sm:text-xl font-bold text-[#5797d0] mb-4 flex items-center gap-2">
-                <Heart className="w-5 h-5 text-[#ef72b4]" />
-                <span>💕 Love Story (Cerita Perjalanan Cinta)</span>
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-[#5797d0] flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-[#ef72b4]" />
+                    <span>💕 Love Story (Cerita Perjalanan Cinta)</span>
+                  </h2>
+                  <p className="text-xs text-[#527595] mt-0.5">
+                    Ubah judul dan kisah perjalanan cinta Anda yang tampil di undangan.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = Array.isArray(formData.stories) && formData.stories.length > 0 
+                        ? [...formData.stories] 
+                        : [...weddingData.stories];
+                      const newStoryItem = {
+                        title: 'Momen Baru',
+                        story: 'Tuliskan momen berharga perjalanan cinta Anda di sini...'
+                      };
+                      setFormData({
+                        ...formData,
+                        stories: [...current, newStoryItem]
+                      });
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#f0f7fc] text-[#2b6cb0] hover:bg-[#e1f0fa] border border-[#b8d5ee] transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>+ Tambah Cerita</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className={`px-3.5 py-1.5 rounded-lg text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 transition-all ${
+                      justSaved 
+                        ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300' 
+                        : 'bg-[#ef72b4] hover:bg-[#d85e9e]'
+                    }`}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : justSaved ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                        <span>Cerita Tersimpan!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Simpan Cerita</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
 
               <div className="space-y-4">
-                {formData.stories.map((story, idx) => (
-                  <div key={idx} className="p-4 bg-[#f8fbfe] rounded-xl border border-[#d9e8f5] space-y-2.5">
+                {(Array.isArray(formData.stories) && formData.stories.length > 0
+                  ? formData.stories
+                  : weddingData.stories
+                ).map((story, idx) => (
+                  <div key={idx} className="p-4 bg-[#f8fbfe] rounded-xl border border-[#d9e8f5] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-[#ef72b4] text-sm">
-                        Cerita #{idx + 1}
+                      <span className="font-bold text-[#ef72b4] text-sm flex items-center gap-1.5">
+                        <Heart className="w-3.5 h-3.5 fill-[#ef72b4]" />
+                        <span>Kisah Bagian #{idx + 1}</span>
                       </span>
+
+                      {/* Tombol Hapus jika lebih dari 1 cerita */}
+                      {(formData.stories || weddingData.stories).length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = Array.isArray(formData.stories) && formData.stories.length > 0 
+                              ? [...formData.stories] 
+                              : [...weddingData.stories];
+                            const filtered = current.filter((_, i) => i !== idx);
+                            setFormData({ ...formData, stories: filtered });
+                          }}
+                          className="text-xs text-rose-500 hover:text-rose-700 font-semibold px-2 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer"
+                        >
+                          Hapus Cerita
+                        </button>
+                      )}
                     </div>
 
                     <div>
@@ -2169,12 +2247,15 @@ Hormat kami,
                         type="text"
                         value={story.title}
                         onChange={(e) => {
-                          const newStories = [...formData.stories];
-                          newStories[idx].title = e.target.value;
-                          setFormData({ ...formData, stories: newStories });
+                          const val = e.target.value;
+                          const current = Array.isArray(formData.stories) && formData.stories.length > 0 
+                            ? [...formData.stories] 
+                            : [...weddingData.stories];
+                          const updated = current.map((item, i) => i === idx ? { ...item, title: val } : item);
+                          setFormData({ ...formData, stories: updated });
                         }}
-                        placeholder="Awal Pertemuan"
-                        className="w-full px-3 py-1.5 rounded-lg border border-[#d9e0e5] text-sm bg-white"
+                        placeholder="Contoh: Awal Pertemuan"
+                        className="w-full px-3 py-2 rounded-lg border border-[#d9e0e5] focus:border-[#5797d0] outline-none text-sm bg-white"
                       />
                     </div>
 
@@ -2183,21 +2264,58 @@ Hormat kami,
                         Isi Cerita:
                       </label>
                       <textarea
-                        rows={2}
+                        rows={3}
                         value={story.story}
                         onChange={(e) => {
-                          const newStories = [...formData.stories];
-                          newStories[idx].story = e.target.value;
-                          setFormData({ ...formData, stories: newStories });
+                          const val = e.target.value;
+                          const current = Array.isArray(formData.stories) && formData.stories.length > 0 
+                            ? [...formData.stories] 
+                            : [...weddingData.stories];
+                          const updated = current.map((item, i) => i === idx ? { ...item, story: val } : item);
+                          setFormData({ ...formData, stories: updated });
                         }}
-                        className="w-full px-3 py-1.5 rounded-lg border border-[#d9e0e5] text-sm bg-white resize-none"
+                        placeholder="Tuliskan cerita cinta Anda..."
+                        className="w-full px-3 py-2 rounded-lg border border-[#d9e0e5] focus:border-[#5797d0] outline-none text-sm bg-white resize-y"
                       />
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/* Tombol Simpan di Bawah */}
+              <div className="mt-5 pt-3 border-t border-[#edf2f7] flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs text-[#718096]">
+                  Pastikan menekan tombol <strong>Simpan Cerita</strong> agar teks langsung terupdate di undangan.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md cursor-pointer flex items-center gap-1.5 transition-all ${
+                    justSaved 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300' 
+                      : 'bg-[#ef72b4] hover:bg-[#d85e9e] active:scale-95'
+                  }`}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan Cerita...</span>
+                    </>
+                  ) : justSaved ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                      <span>Cerita Berhasil Disimpan!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Simpan Perubahan Cerita</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
         )}
 
         {/* TAB 4: HADIAH & REKENING */}
