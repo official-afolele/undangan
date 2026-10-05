@@ -31,7 +31,7 @@ export const weddingData: WeddingConfig = {
     isoDate: '2026-12-26',
     timeStr: 'Pukul 08.00 WIB - Selesai',
     venueName: 'Kediaman Mempelai Wanita',
-    address: 'Jalan Pashanda Bhakti, RT 005 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
+    address: 'Jalan Pashanda Bhakti, RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
     mapsUrl: 'https://maps.app.goo.gl/PJBKEHqAw4uwG5Ms8'
   },
   resepsi: {
@@ -40,7 +40,7 @@ export const weddingData: WeddingConfig = {
     isoDate: '2026-12-27',
     timeStr: 'Pukul 14.00 - 19.00 WIB',
     venueName: 'Kediaman Mempelai Wanita',
-    address: 'Jalan Pashanda Bhakti, RT 005 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
+    address: 'Jalan Pashanda Bhakti, RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
     mapsUrl: 'https://maps.app.goo.gl/PJBKEHqAw4uwG5Ms8'
   },
   stories: [
@@ -76,11 +76,13 @@ export const weddingData: WeddingConfig = {
   ],
   giftAddress: {
     recipient: 'Dian',
-    fullAddress: 'Jl. Pashanda Bhakti RT 005 RW 002, Dusun Pangkalan Betung, Desa Pipitteja, Kec. Teluk Keramat, Kab. Sambas'
+    fullAddress: 'Jl. Pashanda Bhakti RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipitteja, Kec. Teluk Keramat, Kab. Sambas'
   },
   musicTitle: 'Cinta Terakhir (Cover)',
   musicArtist: 'Ari Lasso / Cover',
-  audioUrl: 'https://wedding-invitations-chi.vercel.app/audio/cinta_terakhir_cover1.mp3'
+  audioUrl: 'https://wedding-invitations-chi.vercel.app/audio/cinta_terakhir_cover1.mp3',
+  googleScriptUrl: 'https://script.google.com/macros/s/AKfycby6h1lOSpTyczUj5Bsyu3n0W3AnlZuME1Cn4V2WFfpNQeGj6v_3poNiZScPbButlpVf/exec',
+  customDomain: 'https://ayonikah.web.id'
 };
 
 export const initialWishes: WishEntry[] = [];
@@ -91,4 +93,3 @@ export const initialGuests: GuestItem[] = [
   { id: '3', name: 'Keluarga Besar Hatta', category: 'Keluarga', note: 'Keluarga mempelai wanita' },
   { id: '4', name: 'Rekan Kerja Dinas', category: 'Kantor', note: 'Teman kantor' },
 ];
-
