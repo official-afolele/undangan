@@ -20,7 +20,10 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
 
   const bridePhotoUrl = normalizeImageUrl(config.bride.photo);
   const groomPhotoUrl = normalizeImageUrl(config.groom.photo);
-  const coupleCoverUrl = config.couplePhoto ? normalizeImageUrl(config.couplePhoto) : null;
+
+  // Blokir foto taman lama (/couple-photo.jpg). Hanya pakai foto berdua latar biru
+  const isOldGardenPhoto = !config.couplePhoto || config.couplePhoto === '/couple-photo.jpg' || config.couplePhoto.includes('couple-photo.jpg');
+  const coupleCoverUrl = !isOldGardenPhoto && config.couplePhoto ? normalizeImageUrl(config.couplePhoto) : '/couple-cover.jpg';
 
   return (
     <section 
@@ -30,7 +33,7 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
       {/* ================= BACKGROUND PORTRAITS ================= */}
       <div className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden bg-[#1548a4]">
         {coupleCoverUrl && !couplePhotoError ? (
-          /* Single Combined Photo of Dian & Jaka */
+          /* Single Combined Photo (Foto Berdua Latar Biru) */
           <img
             src={coupleCoverUrl}
             alt="Dian & Jaka"
@@ -40,9 +43,9 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
             className="w-full h-full object-cover object-top"
           />
         ) : (
-          /* Side-by-Side: Dian di Kiri, Jaka di Kanan */
+          /* Foto Pasangan Berlatar Biru Royal: Dian di Kiri, Jaka di Kanan */
           <>
-            {/* Sisi Kiri: Dian (Mempelai Wanita) */}
+            {/* Sisi Kiri: Dian (Mempelai Wanita - Pas Foto Biru) */}
             <div className="absolute -left-[14%] sm:-left-[6%] top-[16%] sm:top-[14%] bottom-0 w-[64%] sm:w-[58%] flex items-end justify-start overflow-hidden">
               <img
                 src={bridePhotoUrl}
@@ -59,7 +62,7 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
               />
             </div>
 
-            {/* Sisi Kanan: Jaka (Mempelai Pria) */}
+            {/* Sisi Kanan: Jaka (Mempelai Pria - Pas Foto Biru) */}
             <div className="absolute -right-[14%] sm:-right-[6%] top-[16%] sm:top-[14%] bottom-0 w-[64%] sm:w-[58%] flex items-end justify-end overflow-hidden">
               <img
                 src={groomPhotoUrl}
@@ -100,7 +103,10 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
       {/* ================= TOP HEADER: Dian & Jaka ================= */}
       <div className="relative z-20 pt-14 sm:pt-16 px-4 flex flex-col items-center">
         {/* Slender Romantic Script Names: Dian & Jaka */}
-        <h1 className="font-['Alex_Brush',cursive] text-5xl sm:text-6xl md:text-7xl text-white font-normal tracking-wide drop-shadow-[0_2px_12px_rgba(7,25,58,0.7)] leading-tight select-none">
+        <h1 
+          style={{ fontFamily: "'Alex Brush', cursive" }}
+          className="font-alex text-5xl sm:text-6xl md:text-7xl text-white font-normal tracking-wide drop-shadow-[0_2px_12px_rgba(7,25,58,0.7)] leading-tight select-none"
+        >
           Dian &amp; Jaka
         </h1>
 
@@ -114,19 +120,25 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
       <div className="relative z-20 flex-1" />
 
       {/* ================= BOTTOM INVITATION AREA ================= */}
-      <div className="relative z-20 pb-10 sm:pb-14 px-4 sm:px-6 flex flex-col items-center max-w-sm sm:max-w-md mx-auto w-full">
+      <div className="relative z-20 pb-12 sm:pb-16 px-4 sm:px-6 flex flex-col items-center max-w-sm sm:max-w-md mx-auto w-full">
         {/* Salutation */}
         <span className="font-sans text-xs sm:text-sm text-sky-100/90 font-normal tracking-wide drop-shadow-sm">
           Kepada Yth. Bpk/Ibu/Sdr/i
         </span>
 
         {/* Guest Name in Classic Bold Serif */}
-        <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-white mt-1.5 mb-1 tracking-wide drop-shadow-[0_2px_10px_rgba(7,25,58,0.7)] break-words text-center max-w-full">
+        <h2 
+          style={{ fontFamily: "'Playfair Display', serif" }}
+          className="font-playfair text-2xl sm:text-3xl font-bold text-white mt-1.5 mb-1 tracking-wide drop-shadow-[0_2px_10px_rgba(7,25,58,0.7)] break-words text-center max-w-full"
+        >
           {guestName || 'Nama Tamu'}
         </h2>
 
         {/* Courtesy Disclaimer */}
-        <p className="font-['Playfair_Display',serif] italic text-[11px] sm:text-xs text-sky-200/85 tracking-wide drop-shadow-sm text-center">
+        <p 
+          style={{ fontFamily: "'Playfair Display', serif" }}
+          className="font-playfair italic text-[11px] sm:text-xs text-sky-200/85 tracking-wide drop-shadow-sm text-center"
+        >
           *) Mohon maaf apabila ada kesalahan dalam penulisan nama/gelar
         </p>
 
