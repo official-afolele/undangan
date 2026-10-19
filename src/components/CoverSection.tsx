@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { WeddingConfig } from '../types';
 import { normalizeImageUrl } from '../utils/imageUrl';
 
@@ -14,182 +14,125 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
   config,
   guestName,
   onOpenInvitation,
-  onEditPhoto,
 }) => {
+  const bridePhotoUrl = normalizeImageUrl(config.bride.photo);
+  const groomPhotoUrl = normalizeImageUrl(config.groom.photo);
+  const coupleCoverUrl = config.couplePhoto && config.couplePhoto !== '/couple-photo.jpg'
+    ? normalizeImageUrl(config.couplePhoto)
+    : null;
+
   return (
     <section 
       id="cover-section"
-      className="relative min-h-[100dvh] w-full flex flex-col items-center justify-center px-4 py-8 overflow-hidden text-center select-none"
+      className="relative min-h-[100dvh] w-full flex flex-col justify-between overflow-hidden text-center select-none bg-[#1548a4]"
     >
-      {/* Decorative Floating Hearts */}
-      <div 
-        aria-hidden="true" 
-        className="absolute top-[18%] left-[6%] sm:left-[10%] text-2xl sm:text-3xl text-[#ef73b6] animate-soft-float pointer-events-none opacity-80"
-      >
-        ♡
-      </div>
-      <div 
-        aria-hidden="true" 
-        className="absolute top-[38%] right-[6%] sm:right-[10%] text-3xl sm:text-4xl text-[#8ec5ed] animate-soft-float pointer-events-none opacity-75"
-        style={{ animationDelay: '1.5s' }}
-      >
-        ♡
-      </div>
-      <div 
-        aria-hidden="true" 
-        className="absolute bottom-[16%] right-[10%] sm:right-[14%] text-2xl sm:text-3xl text-[#ef73b6] animate-soft-float pointer-events-none opacity-80"
-        style={{ animationDelay: '2.5s' }}
-      >
-        ♡
-      </div>
-      <div 
-        aria-hidden="true" 
-        className="absolute bottom-[20%] left-[8%] sm:left-[12%] text-xl sm:text-2xl text-[#8ec5ed] animate-soft-float pointer-events-none opacity-75"
-        style={{ animationDelay: '0.8s' }}
-      >
-        ♡
+      {/* ================= BACKGROUND PORTRAITS ================= */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden bg-[#1548a4]">
+        {coupleCoverUrl ? (
+          /* Single Combined Photo (Foto Berdua) */
+          <img
+            src={coupleCoverUrl}
+            alt="Dian & Jaka"
+            loading="eager"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-center"
+          />
+        ) : (
+          /* Side-by-Side: Dian di Kiri, Jaka di Kanan */
+          <>
+            {/* Sisi Kiri: Dian (Mempelai Wanita) */}
+            <div className="absolute -left-[14%] sm:-left-[6%] top-[16%] sm:top-[14%] bottom-0 w-[64%] sm:w-[58%] flex items-end justify-start overflow-hidden">
+              <img
+                src={bridePhotoUrl}
+                alt={config.bride.fullName || config.bride.name}
+                loading="eager"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.includes('unsplash.com')) {
+                    target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80';
+                  }
+                }}
+                className="w-full h-full max-h-[82vh] object-cover object-top"
+              />
+            </div>
+
+            {/* Sisi Kanan: Jaka (Mempelai Pria) */}
+            <div className="absolute -right-[14%] sm:-right-[6%] top-[16%] sm:top-[14%] bottom-0 w-[64%] sm:w-[58%] flex items-end justify-end overflow-hidden">
+              <img
+                src={groomPhotoUrl}
+                alt={config.groom.fullName || config.groom.name}
+                loading="eager"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.includes('unsplash.com')) {
+                    target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80';
+                  }
+                }}
+                className="w-full h-full max-h-[82vh] object-cover object-top"
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md mx-auto flex flex-col items-center z-10">
-        {/* Bow Art */}
-        <div className="text-3xl sm:text-4xl text-[#82bce8] mb-1 tracking-widest leading-none font-bold">
-          ⌁⌁♡⌁⌁
-        </div>
+      {/* Top Subtle Blue Gradient (Senada 100% dengan biru latar pas foto #1548a4) */}
+      <div 
+        aria-hidden="true" 
+        className="absolute inset-x-0 top-0 h-44 sm:h-52 bg-gradient-to-b from-[#113e8d]/80 via-[#1548a4]/50 to-transparent pointer-events-none z-10" 
+      />
 
-        {/* Small Intro Header */}
-        <h2 className="font-amatic text-2xl sm:text-3xl text-[#5797d0] tracking-wider uppercase font-bold">
-          THESE COUPLE ARE
-        </h2>
+      {/* Center Subtle Blue Blend */}
+      <div 
+        aria-hidden="true" 
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-[#1548a4]/30 to-transparent pointer-events-none z-10" 
+      />
 
-        {/* Getting Married Display Title */}
-        <h1 className="font-caveat text-4xl sm:text-5xl md:text-6xl text-[#5797d0] font-bold mt-0.5 mb-1 leading-tight">
-          Getting Married
+      {/* Bottom Royal Blue Gradient Overlay */}
+      <div 
+        aria-hidden="true" 
+        className="absolute inset-x-0 bottom-0 h-72 sm:h-80 bg-gradient-to-t from-[#0e3373] via-[#124294]/85 to-transparent pointer-events-none z-10" 
+      />
+
+      {/* ================= TOP HEADER: Dian & Jaka ================= */}
+      <div className="relative z-20 pt-14 sm:pt-16 px-4 flex flex-col items-center">
+        <h1 className="font-['Alex_Brush',cursive] text-5xl sm:text-6xl md:text-7xl text-white font-normal tracking-wide drop-shadow-[0_2px_12px_rgba(7,25,58,0.7)] leading-tight select-none">
+          Dian &amp; Jaka
         </h1>
 
-        {/* Wedding Date */}
-        <p className="font-patrick text-lg sm:text-xl text-[#5797d0] tracking-wide mb-3">
-          26 Desember 2026
+        <p className="font-sans text-xs sm:text-sm text-sky-100/95 font-medium tracking-wide mt-1 drop-shadow-[0_1px_4px_rgba(7,25,58,0.7)]">
+          {config.akad?.dateStr || config.resepsi?.dateStr || 'Sabtu, 26 Desember 2026'}
+        </p>
+      </div>
+
+      {/* Center Spacer */}
+      <div className="relative z-20 flex-1" />
+
+      {/* ================= BOTTOM INVITATION AREA ================= */}
+      <div className="relative z-20 pb-12 sm:pb-16 px-4 sm:px-6 flex flex-col items-center max-w-sm sm:max-w-md mx-auto w-full">
+        <span className="font-sans text-xs sm:text-sm text-sky-100/90 font-normal tracking-wide drop-shadow-sm">
+          Kepada Yth. Bpk/Ibu/Sdr/i
+        </span>
+
+        <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-white mt-1.5 mb-1 tracking-wide drop-shadow-[0_2px_10px_rgba(7,25,58,0.7)] break-words text-center max-w-full">
+          {guestName || 'Nama Tamu'}
+        </h2>
+
+        <p className="font-['Playfair_Display',serif] italic text-[11px] sm:text-xs text-sky-200/85 tracking-wide drop-shadow-sm text-center">
+          *) Mohon maaf apabila ada kesalahan dalam penulisan nama/gelar
         </p>
 
-        {/* Couple Polaroid Photos */}
-        <div className="flex items-end justify-center gap-3 sm:gap-4 my-2 w-full">
-          {/* Groom */}
-          <div className="flex flex-col items-center w-[100px] sm:w-[115px]">
-            <div 
-              onClick={() => onEditPhoto?.('groom')}
-              className={`relative transform -rotate-3 hover:rotate-0 transition-transform duration-300 p-1.5 bg-white border-[5px] sm:border-[6px] border-[#ead9b1] rounded-sm shadow-md ${
-                onEditPhoto ? 'cursor-pointer group' : ''
-              }`}
-            >
-              <img
-                src={normalizeImageUrl(config.groom.photo)}
-                alt={config.groom.name}
-                loading="eager"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (!target.src.includes('unsplash.com')) {
-                    target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
-                  }
-                }}
-                className="w-[84px] h-[110px] sm:w-[98px] sm:h-[126px] object-cover rounded-xs"
-              />
-              {/* Animated Love Icon Badge */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditPhoto?.('groom');
-                }}
-                className={`absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-linear-to-tr from-[#5797d0] to-[#7fb3e0] text-white flex items-center justify-center shadow-md border-2 border-white transition-all ${
-                  onEditPhoto ? 'cursor-pointer hover:scale-115 active:scale-95' : 'pointer-events-none'
-                }`}
-                title={onEditPhoto ? "Ganti Foto Pria" : "Pengantin Pria"}
-              >
-                <Heart className="w-3 h-3 fill-white text-white animate-heartbeat drop-shadow-xs" />
-              </button>
-            </div>
-            <div className="flex items-center gap-1 mt-1.5">
-              <span className="font-caveat text-2xl sm:text-3xl font-semibold text-[#ed72b5] leading-none">
-                {config.groom.name}
-              </span>
-            </div>
-          </div>
-
-          {/* Bride */}
-          <div className="flex flex-col items-center w-[100px] sm:w-[115px]">
-            <div 
-              onClick={() => onEditPhoto?.('bride')}
-              className={`relative transform rotate-3 hover:rotate-0 transition-transform duration-300 p-1.5 bg-white border-[5px] sm:border-[6px] border-[#ead9b1] rounded-sm shadow-md ${
-                onEditPhoto ? 'cursor-pointer group' : ''
-              }`}
-            >
-              <img
-                src={normalizeImageUrl(config.bride.photo)}
-                alt={config.bride.name}
-                loading="eager"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (!target.src.includes('unsplash.com')) {
-                    target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
-                  }
-                }}
-                className="w-[84px] h-[110px] sm:w-[98px] sm:h-[126px] object-cover rounded-xs"
-              />
-              {/* Animated Love Icon Badge */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditPhoto?.('bride');
-                }}
-                className={`absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-linear-to-tr from-[#ef72b4] to-[#f898cb] text-white flex items-center justify-center shadow-md border-2 border-white transition-all ${
-                  onEditPhoto ? 'cursor-pointer hover:scale-115 active:scale-95' : 'pointer-events-none'
-                }`}
-                title={onEditPhoto ? "Ganti Foto Wanita" : "Pengantin Wanita"}
-              >
-                <Heart className="w-3 h-3 fill-white text-white animate-heartbeat drop-shadow-xs" />
-              </button>
-            </div>
-            <div className="flex items-center gap-1 mt-1.5">
-              <span className="font-caveat text-2xl sm:text-3xl font-semibold text-[#ed72b5] leading-none">
-                {config.bride.name}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Guest Area */}
-        <div className="w-full mt-4 mb-2 flex flex-col items-center">
-          <span className="font-patrick text-base sm:text-lg text-[#5797d0]">
-            Kepada Yth. Bapak/Ibu/Saudara/i:
-          </span>
-          <div className="mt-1 px-4 py-1.5 rounded-xl bg-white/75 border border-[#8ec5ed]/30 shadow-xs max-w-[92%]">
-            <h3 className="font-patrick text-xl sm:text-2xl font-bold text-[#2d3748] break-words">
-              {guestName || 'Tamu Undangan'}
-            </h3>
-          </div>
-          <span className="font-patrick text-xs text-[#527595]/80 mt-1 italic">
-            *Mohon maaf bila ada kesalahan penulisan nama/gelar
-          </span>
-        </div>
-
-        {/* Open Button */}
+        {/* Glowing White Border Button */}
         <button
           id="open-invitation-btn"
           type="button"
           onClick={onOpenInvitation}
-          className="mt-3 px-8 py-3 rounded-full bg-[#91c7eb] hover:bg-[#7cb9e4] active:scale-95 text-white font-amatic text-2xl sm:text-3xl font-bold tracking-wider shadow-[0_5px_0_#6eacd6] active:shadow-[0_1px_0_#6eacd6] active:translate-y-1 transition-all duration-150 cursor-pointer min-h-[48px] flex items-center justify-center gap-2 group"
+          className="mt-4 px-6 sm:px-7 py-2.5 rounded-xl bg-[#1d52a8]/70 hover:bg-[#2561c2]/85 active:scale-95 border-2 border-white/90 text-white font-sans text-xs sm:text-sm font-medium tracking-wide backdrop-blur-md shadow-[0_0_18px_rgba(255,255,255,0.45)] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 group min-h-[42px]"
         >
+          <Mail className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
           <span>Buka Undangan</span>
-          <span className="group-hover:translate-x-1 transition-transform">💌</span>
         </button>
-
-        {/* Bottom Doodle */}
-        <div className="text-2xl sm:text-3xl text-[#5797d0] mt-3 tracking-widest font-bold">
-          ⌁♡⌁
-        </div>
       </div>
     </section>
   );
