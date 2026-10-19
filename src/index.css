@@ -1,10 +1,13 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
 
 @layer base {
   :root {
     --font-patrick: 'Patrick Hand', cursive, sans-serif;
     --font-caveat: 'Caveat', cursive, sans-serif;
     --font-amatic: 'Amatic SC', cursive, sans-serif;
+    --font-alex: 'Alex Brush', cursive;
+    --font-playfair: 'Playfair Display', serif;
   }
 
   html {
@@ -30,6 +33,14 @@
 
 .font-amatic {
   font-family: 'Amatic SC', cursive, sans-serif;
+}
+
+.font-alex {
+  font-family: 'Alex Brush', cursive;
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
 }
 
 /* Paper Texture Background */
