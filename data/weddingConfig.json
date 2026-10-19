@@ -4,7 +4,7 @@
     "fullName": "Jaka, S.Kom",
     "role": "Groom",
     "photo": "/uploads/groom_photo.jpg",
-    "parents": "Putra Keempat dari Bapak Asmarni dan Ibu Lamidah",
+    "parents": "Putra dari Bapak Asmarni dan Ibu Lamidah",
     "father": "Bapak Asmarni",
     "mother": "Ibu Lamidah",
     "instagram": "@jaka.asmarni"
@@ -14,7 +14,7 @@
     "fullName": "Harinurdian, S.E",
     "role": "Bride",
     "photo": "/uploads/bride_photo.jpg",
-    "parents": "Putri Pertama dari Bapak Hatta, S.Pd.Sd dan Ibu Sumartik",
+    "parents": "Putri dari Bapak Hatta, S.Pd.Sd dan Ibu Sumartik",
     "father": "Bapak Hatta, S.Pd.Sd",
     "mother": "Ibu Sumartik",
     "instagram": "@harinurdian"
@@ -78,5 +78,7 @@
   },
   "musicTitle": "Cinta Terakhir (Cover)",
   "musicArtist": "Ari Lasso / Cover",
-  "audioUrl": "https://wedding-invitations-chi.vercel.app/audio/cinta_terakhir_cover1.mp3"
+  "audioUrl": "https://wedding-invitations-chi.vercel.app/audio/cinta_terakhir_cover1.mp3",
+  "googleScriptUrl": "https://script.google.com/macros/s/AKfycby8eX7J1tWlTYogRhtAVbC6uxTBBNxL_XOdFHTgu8syR25uTQh49bT_k0Yswyaui3LU/exec",
+  "customDomain": "ayonikah.web.id"
 }
