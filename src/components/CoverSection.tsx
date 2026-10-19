@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Camera } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { WeddingConfig } from '../types';
 import { normalizeImageUrl } from '../utils/imageUrl';
 
@@ -8,13 +8,13 @@ interface CoverSectionProps {
   guestName: string;
   onOpenInvitation: () => void;
   onEditPhoto?: (role: 'groom' | 'bride' | 'couple') => void;
+  onUpdateCoverPhoto?: (url: string) => void;
 }
 
 export const CoverSection: React.FC<CoverSectionProps> = ({
   config,
   guestName,
   onOpenInvitation,
-  onEditPhoto,
 }) => {
   const [couplePhotoError, setCouplePhotoError] = useState(false);
 
@@ -113,14 +113,17 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
 
       {/* ================= BOTTOM INVITATION AREA ================= */}
       <div className="relative z-20 pb-12 sm:pb-16 px-4 sm:px-6 flex flex-col items-center max-w-sm sm:max-w-md mx-auto w-full">
+        {/* Salutation */}
         <span className="font-sans text-xs sm:text-sm text-sky-100/90 font-normal tracking-wide drop-shadow-sm">
           Kepada Yth. Bpk/Ibu/Sdr/i
         </span>
 
+        {/* Guest Name in Classic Bold Serif */}
         <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-white mt-1.5 mb-1 tracking-wide drop-shadow-[0_2px_10px_rgba(7,25,58,0.7)] break-words text-center max-w-full">
           {guestName || 'Nama Tamu'}
         </h2>
 
+        {/* Courtesy Disclaimer */}
         <p className="font-['Playfair_Display',serif] italic text-[11px] sm:text-xs text-sky-200/85 tracking-wide drop-shadow-sm text-center">
           *) Mohon maaf apabila ada kesalahan dalam penulisan nama/gelar
         </p>
@@ -135,19 +138,6 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
           <Mail className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
           <span>Buka Undangan</span>
         </button>
-
-        {/* Tombol Cepat Ganti Foto Cover */}
-        {onEditPhoto && (
-          <button
-            type="button"
-            onClick={() => onEditPhoto('couple')}
-            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/80 hover:text-white text-[11px] font-medium backdrop-blur-xs transition-colors cursor-pointer"
-            title="Ganti Foto Sampul"
-          >
-            <Camera className="w-3 h-3" />
-            <span>Ganti Foto Cover</span>
-          </button>
-        )}
       </div>
     </section>
   );
