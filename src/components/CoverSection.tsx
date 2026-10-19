@@ -99,10 +99,12 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
 
       {/* ================= TOP HEADER: Dian & Jaka ================= */}
       <div className="relative z-20 pt-14 sm:pt-16 px-4 flex flex-col items-center">
+        {/* Slender Romantic Script Names: Dian & Jaka */}
         <h1 className="font-['Alex_Brush',cursive] text-5xl sm:text-6xl md:text-7xl text-white font-normal tracking-wide drop-shadow-[0_2px_12px_rgba(7,25,58,0.7)] leading-tight select-none">
           Dian &amp; Jaka
         </h1>
 
+        {/* Wedding Date */}
         <p className="font-sans text-xs sm:text-sm text-sky-100/95 font-medium tracking-wide mt-1 drop-shadow-[0_1px_4px_rgba(7,25,58,0.7)]">
           {config.akad?.dateStr || config.resepsi?.dateStr || 'Sabtu, 26 Desember 2026'}
         </p>
@@ -112,7 +114,7 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
       <div className="relative z-20 flex-1" />
 
       {/* ================= BOTTOM INVITATION AREA ================= */}
-      <div className="relative z-20 pb-12 sm:pb-16 px-4 sm:px-6 flex flex-col items-center max-w-sm sm:max-w-md mx-auto w-full">
+      <div className="relative z-20 pb-10 sm:pb-14 px-4 sm:px-6 flex flex-col items-center max-w-sm sm:max-w-md mx-auto w-full">
         {/* Salutation */}
         <span className="font-sans text-xs sm:text-sm text-sky-100/90 font-normal tracking-wide drop-shadow-sm">
           Kepada Yth. Bpk/Ibu/Sdr/i
