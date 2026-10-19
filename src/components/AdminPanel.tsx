@@ -3,7 +3,7 @@ import { WeddingConfig, GuestItem, WishEntry } from '../types';
 import { weddingData } from '../data/weddingData';
 import { 
   ArrowLeft, 
-  Save,
+  Save, 
   RotateCcw, 
   Plus, 
   Trash2, 
@@ -39,11 +39,23 @@ import {
   MessageSquareHeart,
   RefreshCw,
   Crop,
-  Sliders
+  Sliders,
+  Edit3,
+  FileSpreadsheet,
+  FileCode,
+  CheckCheck,
+  Globe
 } from 'lucide-react';
 import { normalizeImageUrl } from '../utils/imageUrl';
 import { validateAdminPassword } from '../utils/auth';
 import { PhotoEditorModal, PhotoRole } from './PhotoEditorModal';
+import { CoverSection } from './CoverSection';
+import { Page2TitleQuote } from './Page2TitleQuote';
+import { BrideGroomSection } from './BrideGroomSection';
+import { SaveTheDateSection } from './SaveTheDateSection';
+import { EventDetailsSection } from './EventDetailsSection';
+import { LoveStorySection } from './LoveStorySection';
+import { WeddingGiftSection } from './WeddingGiftSection';
 
 // Helper to compress image client-side via canvas (reducing 10MB phone camera images to ~200KB)
 const compressImageFile = (file: File, maxDimension = 1200, quality = 0.85): Promise<string> => {
@@ -122,6 +134,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [wishesFilter, setWishesFilter] = useState<'semua' | 'hadir' | 'ragu' | 'tidak'>('semua');
   const [wishesSearch, setWishesSearch] = useState('');
 
+  const WISHES_STORAGE_KEY = 'wedding_wishes_jaka_dian';
+
   const fetchAdminWishes = async () => {
     setIsLoadingWishes(true);
 
@@ -129,7 +143,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       ? formData.googleScriptUrl
       : 'https://script.google.com/macros/s/AKfycby6h1lOSpTyczUj5Bsyu3n0W3AnlZuME1Cn4V2WFfpNQeGj6v_3poNiZScPbButlpVf/exec';
 
-    // 1. Ambil langsung dari Google Spreadsheet
     if (targetScriptUrl) {
       try {
         const scriptRes = await fetch(`${targetScriptUrl}?action=get_wishes`);
@@ -138,57 +151,93 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           if (data && Array.isArray(data.wishes)) {
             setWishesList(data.wishes);
             try {
-              localStorage.setItem('wedding_wishes_jaka_dian', JSON.stringify(data.wishes));
+              localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(data.wishes));
             } catch {}
             setIsLoadingWishes(false);
             return;
           }
         }
       } catch (err) {
-        console.warn('Gagal memuat ucapan dari Google Script:', err);
+        console.warn('Gagal memuat ucapan dari Google Script di Admin:', err);
       }
     }
 
-    // 2. Fallback dari penyimpanan lokal
     try {
-      const saved = localStorage.getItem('wedding_wishes_jaka_dian');
-      if (saved) {
+      const res = await fetch('/api/wishes');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setWishesList(data);
+          try {
+            localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(data));
+          } catch {}
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Gagal memuat ucapan di Admin Panel dari server:', err);
+    } finally {
+      setIsLoadingWishes(false);
+    }
+
+    // Fallback: load from localStorage
+    try {
+      const saved = localStorage.getItem(WISHES_STORAGE_KEY);
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           setWishesList(parsed);
-          setIsLoadingWishes(false);
           return;
         }
       }
     } catch {}
-
-    setIsLoadingWishes(false);
+    setWishesList([]);
   };
+
   useEffect(() => {
     fetchAdminWishes();
   }, []);
 
   const handleDeleteWish = async (id: string, name: string) => {
     if (!window.confirm(`Hapus ucapan dan konfirmasi dari "${name}"?`)) return;
+
+    // Immediately update state and localStorage
+    const updated = wishesList.filter((w) => w.id !== id);
+    setWishesList(updated);
+    try {
+      localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
+    } catch {}
+
     try {
       const res = await fetch(`/api/wishes/${id}`, { method: 'DELETE' });
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.wishes)) {
           setWishesList(data.wishes);
-        } else {
-          setWishesList((prev) => prev.filter((w) => w.id !== id));
+          try {
+            localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(data.wishes));
+          } catch {}
         }
-      } else {
-        setWishesList((prev) => prev.filter((w) => w.id !== id));
       }
     } catch (err) {
-      console.error('Gagal menghapus wish:', err);
-      setWishesList((prev) => prev.filter((w) => w.id !== id));
+      console.warn('API delete wish error (tersimpan di penyimpanan lokal):', err);
     }
   };
 
-  // State & Handler Edit Ucapan
+  const handleClearAllWishes = async () => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus SEMUA ucapan yang masuk? Tindakan ini akan mengosongkan daftar ucapan.')) return;
+    setWishesList([]);
+    try {
+      localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify([]));
+      window.dispatchEvent(new Event('storage'));
+    } catch {}
+    try {
+      await fetch('/api/wishes/all', { method: 'DELETE' });
+    } catch {}
+  };
+
+  // Editing wish state & handler
   const [editingWish, setEditingWish] = useState<WishEntry | null>(null);
 
   const handleSaveEditWish = (e: React.FormEvent) => {
@@ -198,11 +247,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     const updated = wishesList.map((w) => (w.id === editingWish.id ? editingWish : w));
     setWishesList(updated);
     try {
-      localStorage.setItem('wedding_wishes_jaka_dian', JSON.stringify(updated));
+      localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
     } catch {}
 
     setEditingWish(null);
-    alert(`Ucapan dari "${editingWish.name}" berhasil diperbarui!`);
+    setSaveToast({
+      title: 'Ucapan Berhasil Diperbarui!',
+      detail: `Ucapan dari "${editingWish.name}" telah berhasil diperbarui dan disimpan.`,
+      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+    });
   };
 
   // Photo upload & error states
@@ -212,12 +266,78 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [selectedPreviewGuestId, setSelectedPreviewGuestId] = useState<string>('');
   const [whatsAppMessageFormat, setWhatsAppMessageFormat] = useState<'standar' | 'link_atas'>('standar');
 
-  // Sync state if config or guests prop updates from server
+  // Auto-Save, Live Sync, and Preview states
+  const isInternalUpdate = React.useRef(false);
+  const isFirstMount = React.useRef(true);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isExportCodeOpen, setIsExportCodeOpen] = useState(false);
+  const [copiedCodeSuccess, setCopiedCodeSuccess] = useState(false);
+
+  // Sync state if config prop updates from outside (e.g. initial load or reset default)
   useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
     if (config) {
       setFormData(JSON.parse(JSON.stringify(config)));
     }
   }, [config]);
+
+  // Live Auto-Save effect: Debounced 600ms whenever user types in ANY tab
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    setAutoSaveStatus('saving');
+    const timer = setTimeout(() => {
+      isInternalUpdate.current = true;
+      const updatedGroom = {
+        ...formData.groom,
+        photo: normalizeImageUrl(formData.groom.photo) || formData.groom.photo || config.groom.photo,
+        parents: formData.groom.father && formData.groom.mother 
+          ? `Putra dari ${formData.groom.father} dan ${formData.groom.mother}` 
+          : formData.groom.parents
+      };
+
+      const updatedBride = {
+        ...formData.bride,
+        photo: normalizeImageUrl(formData.bride.photo) || formData.bride.photo || config.bride.photo,
+        parents: formData.bride.father && formData.bride.mother 
+          ? `Putri dari ${formData.bride.father} dan ${formData.bride.mother}` 
+          : formData.bride.parents
+      };
+
+      const storiesToSave = Array.isArray(formData.stories) && formData.stories.length > 0
+        ? formData.stories
+        : (config.stories || weddingData.stories);
+
+      const updatedConfig: WeddingConfig = {
+        ...formData,
+        stories: storiesToSave,
+        groom: updatedGroom,
+        bride: updatedBride
+      };
+
+      onSaveConfig(updatedConfig);
+      setAutoSaveStatus('saved');
+      const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+      setLastSavedTime(timeStr);
+      setTimeout(() => setAutoSaveStatus('idle'), 2500);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [formData]);
+
+  const getGeneratedWeddingDataCode = () => {
+    return `import { WeddingConfig } from '../types';
+
+export const weddingData: WeddingConfig = ${JSON.stringify(formData, null, 2)};
+`;
+  };
 
   useEffect(() => {
     if (guests) {
@@ -232,6 +352,134 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newGuestNote, setNewGuestNote] = useState('');
   const [guestSearch, setGuestSearch] = useState('');
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
+
+  // Google Apps Script state
+  const [isTestingScript, setIsTestingScript] = useState(false);
+  const [isSyncingScript, setIsSyncingScript] = useState(false);
+  const [scriptTestResult, setScriptTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
+  const [scriptSyncResult, setScriptSyncResult] = useState<{ success: boolean; message: string; wishesSynced?: number; guestsSynced?: number } | null>(null);
+  const [scriptCode, setScriptCode] = useState<string>('');
+  const [hasCopiedScript, setHasCopiedScript] = useState(false);
+  const [isDomainGuideOpen, setIsDomainGuideOpen] = useState(false);
+
+  // Fetch script code on mount or when Google Script tab opened
+  useEffect(() => {
+    if (activeTab === 'google_script' && !scriptCode) {
+      fetch('/api/google-script/code')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.code) setScriptCode(data.code);
+        })
+        .catch(() => {});
+    }
+  }, [activeTab, scriptCode]);
+
+  const handleTestScriptConnection = async () => {
+    const url = formData.googleScriptUrl?.trim();
+    if (!url) {
+      setScriptTestResult({
+        success: false,
+        message: 'Silakan masukkan URL Aplikasi Web Google Apps Script terlebih dahulu.'
+      });
+      return;
+    }
+
+    setIsTestingScript(true);
+    setScriptTestResult(null);
+
+    try {
+      const res = await fetch('/api/google-script/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scriptUrl: url })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setScriptTestResult({
+          success: true,
+          message: data.message || 'Koneksi berhasil! Google Apps Script & Spreadsheet terhubung.',
+          details: data.details
+        });
+      } else {
+        setScriptTestResult({
+          success: false,
+          message: data.error || 'Gagal menghubungi Google Apps Script. Pastikan izin akses diatur ke "Siapa saja" (Anyone).'
+        });
+      }
+    } catch (err: any) {
+      setScriptTestResult({
+        success: false,
+        message: `Terjadi kesalahan koneksi: ${err?.message || 'Gagal tersambung'}`
+      });
+    } finally {
+      setIsTestingScript(false);
+    }
+  };
+
+  const handleSyncToGoogleSheet = async () => {
+    const url = formData.googleScriptUrl?.trim();
+    if (!url) {
+      setScriptSyncResult({
+        success: false,
+        message: 'Masukkan dan simpan URL Google Apps Script terlebih dahulu sebelum sinkronisasi.'
+      });
+      return;
+    }
+
+    setIsSyncingScript(true);
+    setScriptSyncResult(null);
+
+    try {
+      const res = await fetch('/api/google-script/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scriptUrl: url })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setScriptSyncResult({
+          success: true,
+          message: `Berhasil menyinkronkan data ke Spreadsheet! (${data.wishesSynced || 0} Ucapan, ${data.guestsSynced || 0} Tamu)`,
+          wishesSynced: data.wishesSynced,
+          guestsSynced: data.guestsSynced
+        });
+      } else {
+        setScriptSyncResult({
+          success: false,
+          message: data.error || 'Gagal melakukan sinkronisasi ke Google Spreadsheet.'
+        });
+      }
+    } catch (err: any) {
+      setScriptSyncResult({
+        success: false,
+        message: `Gagal sinkronisasi: ${err?.message || 'Jaringan bermasalah'}`
+      });
+    } finally {
+      setIsSyncingScript(false);
+    }
+  };
+
+  const handleCopyScriptCode = () => {
+    if (!scriptCode) return;
+    navigator.clipboard.writeText(scriptCode);
+    setHasCopiedScript(true);
+    setTimeout(() => setHasCopiedScript(false), 3000);
+  };
+
+  const handleDownloadScriptFile = () => {
+    if (!scriptCode) return;
+    const blob = new Blob([scriptCode], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Code.gs';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Audio preview states for admin testing
   const [isPreviewAudioPlaying, setIsPreviewAudioPlaying] = useState(false);
@@ -565,8 +813,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         : formData.bride.parents
     };
 
+    const storiesToSave = Array.isArray(formData.stories) && formData.stories.length > 0
+      ? formData.stories
+      : (config.stories || weddingData.stories);
+
     const updatedConfig: WeddingConfig = {
       ...formData,
+      stories: storiesToSave,
       groom: updatedGroom,
       bride: updatedBride
     };
@@ -644,11 +897,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
+  // Get base public URL (prioritizing custom domain if configured by user)
+  const getBasePublicUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const domain = formData.customDomain?.trim();
+    if (domain) {
+      const clean = domain.replace(/\/$/, '');
+      return clean.startsWith('http') ? clean : `https://${clean}`;
+    }
+    return window.location.origin;
+  };
+
   // Generate invitation link for a guest (always points to the root guest page /)
   const getGuestUrl = (name: string) => {
-    if (typeof window === 'undefined') return '';
-    const origin = window.location.origin;
-    return `${origin}/?to=${encodeURIComponent(name)}`;
+    const base = getBasePublicUrl();
+    return `${base}/?to=${encodeURIComponent(name)}`;
   };
 
   const getAdminUrl = () => {
@@ -657,8 +920,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   const getMainGuestUrl = () => {
-    if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/`;
+    const base = getBasePublicUrl();
+    return `${base}/`;
   };
 
   // Generate WhatsApp message template
@@ -807,16 +1070,44 @@ Hormat kami,
               <p className="text-xs sm:text-sm text-white/90 mt-1 flex items-center gap-2">
                 <span>Akses khusus di</span>
                 <span className="bg-black/20 px-1.5 py-0.5 rounded font-mono text-[11px] font-semibold">/admin</span>
-                {lastSavedTime && (
+                {autoSaveStatus === 'saving' ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full animate-pulse shadow-xs">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Menyimpan Otomatis...
+                  </span>
+                ) : autoSaveStatus === 'saved' ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-500 text-white px-2 py-0.5 rounded-full shadow-xs">
+                    <Check className="w-3 h-3" /> Tersimpan Otomatis!
+                  </span>
+                ) : lastSavedTime ? (
                   <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-medium bg-emerald-600/90 text-white px-2 py-0.5 rounded-full">
                     <CheckCircle2 className="w-3 h-3" /> Tersimpan: {lastSavedTime}
                   </span>
-                )}
+                ) : null}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsPreviewOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              title="Lihat Pratinjau Tampilan Undangan Secara Langsung Tanpa Keluar Admin"
+            >
+              <Eye className="w-4 h-4 text-cyan-200" />
+              <span>👁️ Pratinjau Live</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsExportCodeOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-medium text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              title="Salin Data Konfigurasi untuk GitHub (weddingData.ts)"
+            >
+              <FileCode className="w-4 h-4 text-amber-300" />
+              <span>📋 Ekspor ke GitHub</span>
+            </button>
+
             <button
               type="button"
               onClick={handleOpenPasswordModal}
@@ -825,6 +1116,20 @@ Hormat kami,
             >
               <KeyRound className="w-3.5 h-3.5 text-yellow-300" />
               <span>Ganti Sandi</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('google_script')}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                activeTab === 'google_script'
+                  ? 'bg-emerald-600 text-white ring-2 ring-emerald-300'
+                  : 'bg-emerald-500/90 hover:bg-emerald-600 text-white'
+              }`}
+              title="Buka Pengaturan Google Sheets & Script"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>📊 Google Sheets</span>
             </button>
 
             <button
@@ -981,6 +1286,153 @@ Hormat kami,
               </div>
             </div>
           </div>
+
+          {/* Custom Domain Settings Row */}
+          <div className="mt-4 pt-4 border-t border-[#e2eaf1] bg-[#f8fbfe] -mx-4 -mb-4 sm:-mx-5 sm:-mb-5 p-4 sm:p-5 rounded-b-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-[#5797d0]" />
+                <span className="text-xs sm:text-sm font-bold text-[#2d3748]">
+                  Pengaturan Custom Domain Pribadi (Opsional)
+                </span>
+                {formData.customDomain ? (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                    Domain Aktif
+                  </span>
+                ) : (
+                  <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    Belum Diisi
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsDomainGuideOpen(!isDomainGuideOpen)}
+                className="text-xs text-[#5797d0] hover:text-[#3d7bb0] font-semibold underline cursor-pointer"
+              >
+                {isDomainGuideOpen ? 'Tutup Panduan Domain' : '📖 Cara Pasang Domain (Niagahoster, Cloudflare, dll)'}
+              </button>
+            </div>
+
+            <p className="text-xs text-[#527595] mb-3 leading-relaxed">
+              Punya domain sendiri seperti <code className="bg-white px-1 py-0.5 rounded font-mono font-bold text-[#2b6cb0]">jakadian.my.id</code> atau <code className="bg-white px-1 py-0.5 rounded font-mono font-bold text-[#2b6cb0]">jaka-dian.com</code>? Masukkan di sini agar semua link undangan WhatsApp tamu otomatis menggunakan nama domain Anda.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={formData.customDomain || ''}
+                  onChange={(e) => setFormData({ ...formData, customDomain: e.target.value })}
+                  placeholder="Contoh: jakadian.my.id atau https://undangan.jakadian.com"
+                  className="w-full pl-3.5 pr-10 py-2 rounded-xl border border-[#cbd5e0] focus:border-[#5797d0] focus:ring-2 focus:ring-[#5797d0]/20 font-mono text-xs sm:text-sm outline-none text-[#2d3748] bg-white"
+                />
+                {formData.customDomain && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, customDomain: '' })}
+                    title="Hapus domain"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs cursor-pointer p-1"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleSave();
+                  alert('Pengaturan custom domain berhasil disimpan!');
+                }}
+                disabled={isSaving}
+                className="px-4 py-2 rounded-xl bg-[#5797d0] hover:bg-[#4582b8] text-white font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+              >
+                <Save className="w-4 h-4" />
+                <span>Simpan Domain</span>
+              </button>
+            </div>
+
+            {/* Collapsible Domain Guide */}
+            {isDomainGuideOpen && (
+              <div className="mt-4 p-4 rounded-xl bg-white border border-[#cbd5e1] text-xs text-[#334155] space-y-3 animate-fade-in shadow-2xs">
+                <div className="font-bold text-sm text-[#1e293b] flex items-center gap-1.5 border-b border-[#edf2f7] pb-2">
+                  <Globe className="w-4 h-4 text-[#5797d0]" />
+                  <span>Panduan Menghubungkan Domain Pribadi Anda</span>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                    <strong className="text-emerald-900 block mb-1">
+                      🌟 Cara 1: URL Redirection / Domain Forwarding (Paling Cepat &amp; Mudah ~ 1 Menit)
+                    </strong>
+                    <p className="text-emerald-800 leading-relaxed">
+                      Di panel domain Anda (Niagahoster, Domainesia, Rumahweb, IDCloudHost, Namecheap, dll):
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-emerald-900 mt-1 pl-1">
+                      <li>Buka menu <b>Domain Forwarding / URL Redirect</b>.</li>
+                      <li>Masukkan URL tujuan: <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold select-all">https://ais-pre-dl3ag26jsusy2o4eewdsjr-862196243200.asia-southeast1.run.app</code></li>
+                      <li>Pilih mode <b>Redirect with Masking / Stealth</b> agar alamat di browser pengunjung tetap terlihat sebagai nama domain Anda (misal: <i>jakadian.my.id</i>).</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200">
+                    <strong className="text-blue-900 block mb-1">
+                      🛡️ Cara 2: Melalui Cloudflare (Gratis SSL HTTPS + Anti-DDoS)
+                    </strong>
+                    <p className="text-blue-800 leading-relaxed">
+                      Jika domain Anda menggunakan Cloudflare DNS:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-blue-900 mt-1 pl-1">
+                      <li>Buka menu <b>Rules &gt; Redirect Rules</b> di Cloudflare.</li>
+                      <li>Buat aturan forwarding dari <code className="bg-white px-1.5 py-0.5 rounded font-mono">jakadian.my.id/*</code> diarahkan ke <code className="bg-white px-1.5 py-0.5 rounded font-mono">https://ais-pre-dl3ag26jsusy2o4eewdsjr-862196243200.asia-southeast1.run.app/$1</code>.</li>
+                      <li>Pilih status <b>301 (Permanent Redirect)</b> atau <b>302</b>.</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-purple-50 border border-purple-200">
+                    <strong className="text-purple-900 block mb-1">
+                      🚀 Cara 3: Hosting Mandiri di Vercel / Netlify (Gratis Custom Domain + SSL)
+                    </strong>
+                    <p className="text-purple-800 leading-relaxed">
+                      Bila Anda ingin menghubungkan CNAME langsung: Anda bisa mengunduh repository/file proyek ini (atau menghubungkan ke GitHub), import ke <b>Vercel</b> atau <b>Netlify</b> (100% gratis), lalu tambahkan domain Anda di menu <b>Project Settings &gt; Domains</b> dan arahkan DNS CNAME ke Vercel/Netlify.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Shortcut Card for Google Sheets */}
+        <div className="bg-gradient-to-r from-[#f0fdf4] to-[#dcfce7] border-2 border-[#86efac] p-4 sm:p-5 rounded-2xl mb-5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-[#0f7b40] text-white shadow-xs">
+              <FileSpreadsheet className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm sm:text-base text-emerald-950 flex items-center gap-2">
+                <span>📊 Integrasi Google Sheets & Google Apps Script</span>
+                <span className="text-[10px] bg-[#0f7b40] text-white px-2 py-0.5 rounded-full font-bold">Menu Baru</span>
+              </h3>
+              <p className="text-xs text-emerald-800 mt-0.5">
+                Salin kode <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-[#0f7b40]">Code.gs</code> atau tempelkan Web App URL untuk sinkronisasi ucapan dan tamu.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('google_script')}
+            className={`px-4 py-2 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs ${
+              activeTab === 'google_script'
+                ? 'bg-[#15803d] ring-2 ring-emerald-300'
+                : 'bg-[#0f7b40] hover:bg-[#0c6333]'
+            }`}
+          >
+            <span>Buka Google Sheets & Script</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* Notice Info */}
@@ -991,12 +1443,12 @@ Hormat kami,
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-5 border-b border-[#d9e0e5] scrollbar-none">
+        {/* Navigation Tabs (Flex-Wrap so all tabs are visible without scrolling) */}
+        <div className="flex flex-wrap items-center gap-2 pb-3 mb-5 border-b border-[#d9e0e5]">
           <button
             type="button"
             onClick={() => setActiveTab('pengantin')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'pengantin'
                 ? 'bg-[#5797d0] text-white shadow-xs'
                 : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
@@ -1009,7 +1461,7 @@ Hormat kami,
           <button
             type="button"
             onClick={() => setActiveTab('acara')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'acara'
                 ? 'bg-[#5797d0] text-white shadow-xs'
                 : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
@@ -1022,7 +1474,7 @@ Hormat kami,
           <button
             type="button"
             onClick={() => setActiveTab('musik_cerita')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'musik_cerita'
                 ? 'bg-[#5797d0] text-white shadow-xs'
                 : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
@@ -1035,7 +1487,7 @@ Hormat kami,
           <button
             type="button"
             onClick={() => setActiveTab('kado')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'kado'
                 ? 'bg-[#5797d0] text-white shadow-xs'
                 : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
@@ -1048,7 +1500,7 @@ Hormat kami,
           <button
             type="button"
             onClick={() => setActiveTab('tamu')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'tamu'
                 ? 'bg-[#ec79b8] text-white shadow-xs'
                 : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
@@ -1064,7 +1516,7 @@ Hormat kami,
               setActiveTab('ucapan');
               fetchAdminWishes();
             }}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               activeTab === 'ucapan'
                 ? 'bg-[#ec79b8] text-white shadow-xs'
                 : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
@@ -1077,13 +1529,20 @@ Hormat kami,
           <button
             type="button"
             onClick={() => setActiveTab('google_script')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'google_script'
-                ? 'bg-[#0f7b40] text-white shadow-md'
-                : 'bg-emerald-50 text-[#0f7b40] hover:bg-emerald-100 border border-emerald-300'
+                ? 'bg-[#0f7b40] text-white shadow-md ring-2 ring-[#0f7b40]/30'
+                : 'bg-emerald-50 text-[#0f7b40] hover:bg-emerald-100 border-2 border-emerald-300 shadow-2xs'
             }`}
           >
-            <span>📗 Buku Tamu (Google Sheets)</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>📊 Google Sheets & Script</span>
+            <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-md font-semibold ml-0.5">
+              Baru
+            </span>
+            {formData.googleScriptUrl ? (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-white ml-0.5" title="Google Script Terpasang"></span>
+            ) : null}
           </button>
         </div>
 
@@ -1780,9 +2239,44 @@ Hormat kami,
           <div className="space-y-5">
             {/* AKAD */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
-              <h2 className="text-lg sm:text-xl font-bold text-[#ef72b4] mb-4 flex items-center gap-2">
-                <span>🕌 Rincian Akad Nikah</span>
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-[#ef72b4] flex items-center gap-2">
+                    <span>🕌 Rincian Akad Nikah</span>
+                  </h2>
+                  <p className="text-xs text-[#527595] mt-0.5">
+                    Atur tanggal, waktu, nama tempat, dan alamat lengkap prosesi akad nikah.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`self-start sm:self-auto px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-2 transition-all ${
+                    justSaved 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300' 
+                      : 'bg-[#ef72b4] hover:bg-[#d85e9e]'
+                  }`}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : justSaved ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                      <span>Akad Tersimpan!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Simpan Rincian Akad</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1860,9 +2354,44 @@ Hormat kami,
 
             {/* RESEPSI */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
-              <h2 className="text-lg sm:text-xl font-bold text-[#5797d0] mb-4 flex items-center gap-2">
-                <span>🎉 Rincian Resepsi Pernikahan</span>
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-[#5797d0] flex items-center gap-2">
+                    <span>🎉 Rincian Resepsi Pernikahan</span>
+                  </h2>
+                  <p className="text-xs text-[#527595] mt-0.5">
+                    Atur tanggal, waktu, nama tempat, dan alamat resepsi pernikahan.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`self-start sm:self-auto px-4 py-2 rounded-xl text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-2 transition-all ${
+                    justSaved 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300' 
+                      : 'bg-[#5797d0] hover:bg-[#4784ba]'
+                  }`}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : justSaved ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                      <span>Resepsi Tersimpan!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Simpan Rincian Resepsi</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1957,6 +2486,40 @@ Hormat kami,
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Bottom Save Bar for Tab 2 */}
+            <div className="bg-white p-4 rounded-xl border border-[#e5ebf0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <span className="text-xs text-[#527595]">
+                Pastikan klik tombol simpan untuk memperbarui rincian Akad & Resepsi di undangan.
+              </span>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className={`px-5 py-2.5 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md cursor-pointer flex items-center justify-center gap-2 transition-all ${
+                  justSaved 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300' 
+                    : 'bg-[#5797d0] hover:bg-[#4383bd] active:scale-95'
+                }`}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Menyimpan Rincian Acara...</span>
+                  </>
+                ) : justSaved ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                    <span>Rincian Acara Berhasil Disimpan!</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Simpan Semua Rincian Acara (Akad & Resepsi)</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
@@ -2314,13 +2877,11 @@ Hormat kami,
                       <span>Simpan Perubahan Cerita</span>
                     </>
                   )}
-               </button>
+                </button>
               </div>
             </div>
           </div>
         )}
-
-        {/* TAB 4: HADIAH & REKENING */}
 
         {/* TAB 4: HADIAH & REKENING */}
         {activeTab === 'kado' && (
@@ -2909,7 +3470,7 @@ Hormat kami,
                                 </button>
                               </div>
                             </td>
-                           <td className="py-3 px-3 text-center">
+                            <td className="py-3 px-3 text-center">
                               <button
                                 type="button"
                                 onClick={() => handleDeleteGuest(guest.id, guest.name)}
@@ -2930,7 +3491,7 @@ Hormat kami,
           </div>
         )}
 
-       {/* TAB 6: UCAPAN & RSVP */}
+        {/* TAB 6: UCAPAN & RSVP */}
         {activeTab === 'ucapan' && (
           <div className="space-y-5">
             {/* Header & Metrics */}
@@ -2946,15 +3507,28 @@ Hormat kami,
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={fetchAdminWishes}
-                  disabled={isLoadingWishes}
-                  className="px-3.5 py-2 rounded-xl bg-[#5797d0]/10 hover:bg-[#5797d0]/20 text-[#5797d0] font-bold text-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer transition-colors"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingWishes ? 'animate-spin' : ''}`} />
-                  <span>Segarkan Data</span>
-                </button>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  {wishesList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAllWishes}
+                      className="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                      title="Kosongkan seluruh ucapan"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus Semua</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={fetchAdminWishes}
+                    disabled={isLoadingWishes}
+                    className="px-3.5 py-2 rounded-xl bg-[#5797d0]/10 hover:bg-[#5797d0]/20 text-[#5797d0] font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingWishes ? 'animate-spin' : ''}`} />
+                    <span>Segarkan Data</span>
+                  </button>
+                </div>
               </div>
 
               {/* Stat Cards */}
@@ -2985,6 +3559,7 @@ Hormat kami,
 
               {/* Filters & Search */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                {/* Search */}
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                   <input
@@ -2996,6 +3571,7 @@ Hormat kami,
                   />
                 </div>
 
+                {/* Filter buttons */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {(['semua', 'hadir', 'ragu', 'tidak'] as const).map((cat) => (
                     <button
@@ -3068,14 +3644,24 @@ Hormat kami,
                           </span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteWish(wish.id, wish.name)}
-                          title="Hapus ucapan ini"
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingWish(wish)}
+                            title="Edit ucapan ini"
+                            className="p-1.5 text-gray-400 hover:text-[#5797d0] hover:bg-[#5797d0]/10 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteWish(wish.id, wish.name)}
+                            title="Hapus ucapan ini"
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       <p className="text-xs sm:text-sm text-[#4a5568] leading-relaxed whitespace-pre-line bg-white p-3 rounded-lg border border-[#edf2f7]">
@@ -3089,32 +3675,345 @@ Hormat kami,
           </div>
         )}
 
-        {/* TAB 7: BUKU TAMU & GOOGLE SHEETS */}
+        {/* TAB 7: INTEGRASI GOOGLE SCRIPT & SPREADSHEET */}
         {activeTab === 'google_script' && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-[#0f7b40] to-[#13944d] text-white p-5 rounded-2xl shadow-md">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <span>📗 Integrasi Buku Tamu & Google Sheets</span>
-              </h2>
-              <p className="text-xs text-emerald-100 mt-1">
-                Sinkronisasi ucapan, konfirmasi kehadiran (RSVP), dan buku tamu langsung ke Google Spreadsheet.
-              </p>
+            {/* Header Status Card */}
+            <div className="bg-gradient-to-r from-[#0f7b40] to-[#13944d] text-white p-5 sm:p-6 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1 max-w-xl">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-white/15 text-white backdrop-blur-xs">
+                    <FileSpreadsheet className="w-6 h-6" />
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-bold">
+                    Integrasi Google Sheets & Google Apps Script
+                  </h2>
+                </div>
+                <p className="text-xs sm:text-sm text-emerald-100 leading-relaxed pt-1">
+                  Otomatisasi pengiriman Ucapan Doa, Konfirmasi Kehadiran (RSVP), dan Daftar Tamu ke Google Spreadsheet secara <i>real-time</i> tanpa biaya server tambahan.
+                </p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2.5 rounded-xl text-right">
+                <div className="text-[11px] uppercase tracking-wider text-emerald-100 font-semibold mb-0.5">
+                  Status Integrasi
+                </div>
+                {formData.googleScriptUrl ? (
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-700/80 px-2.5 py-1 rounded-full border border-emerald-400/40">
+                    <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                    <span>Tersambung ke Google Script</span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-200 bg-black/20 px-2.5 py-1 rounded-full">
+                    <span>⚪ Belum Terkonfigurasi</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 space-y-4">
-              <label className="block text-sm font-bold text-gray-700">
-                URL Aplikasi Web Google Apps Script (berakhiran /exec):
-              </label>
-              <input
-                type="text"
-                value={formData.googleScriptUrl || ''}
-                onChange={(e) => setFormData({ ...formData, googleScriptUrl: e.target.value })}
-                placeholder="https://script.google.com/macros/s/.../exec"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-emerald-600 outline-none font-mono"
-              />
-              <p className="text-xs text-gray-500">
-                Tempelkan URL Google Apps Script yang sudah Anda deploy ke kolom di atas, lalu klik <b>Simpan Data</b> di pojok kanan atas layar.
+            {/* URL Configuration Card */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
+              <h3 className="text-base sm:text-lg font-bold text-[#2d3748] mb-2 flex items-center gap-2">
+                <span className="text-[#0f7b40]">🔗</span>
+                <span>URL Aplikasi Web (Google Apps Script Web App URL)</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-[#718096] mb-4">
+                Masukkan URL Aplikasi Web yang Anda dapatkan setelah menerapkan (Deploy) script di Google Sheets (URL biasanya berakhiran <code className="bg-gray-100 px-1 py-0.5 rounded text-[#0f7b40] font-mono font-bold">/exec</code>).
               </p>
+
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="url"
+                      value={formData.googleScriptUrl || ''}
+                      onChange={(e) => setFormData({ ...formData, googleScriptUrl: e.target.value })}
+                      placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                      className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-[#cbd5e0] focus:border-[#0f7b40] focus:ring-2 focus:ring-[#0f7b40]/20 font-mono text-xs sm:text-sm outline-none text-[#2d3748]"
+                    />
+                    {formData.googleScriptUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, googleScriptUrl: '' })}
+                        title="Hapus URL"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs cursor-pointer p-1"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await handleSave();
+                      alert('URL Google Apps Script berhasil disimpan!');
+                    }}
+                    disabled={isSaving}
+                    className="px-5 py-2.5 rounded-xl bg-[#0f7b40] hover:bg-[#0c6333] text-white font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Simpan URL</span>
+                  </button>
+                </div>
+
+                {/* Action Buttons: Test Connection & Sync */}
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleTestScriptConnection}
+                    disabled={isTestingScript || !formData.googleScriptUrl}
+                    className="px-4 py-2 rounded-xl bg-[#f0fdf4] hover:bg-[#dcfce7] border border-[#bbf7d0] text-[#15803d] font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+                  >
+                    {isTestingScript ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#15803d]" />
+                        <span>Menguji Koneksi...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-[#15803d]" />
+                        <span>Uji Koneksi Google Script</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSyncToGoogleSheet}
+                    disabled={isSyncingScript || !formData.googleScriptUrl}
+                    className="px-4 py-2 rounded-xl bg-[#eff6ff] hover:bg-[#dbeafe] border border-[#bfdbfe] text-[#1d4ed8] font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+                  >
+                    {isSyncingScript ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#1d4ed8]" />
+                        <span>Menyinkronkan ke Sheets...</span>
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 text-[#1d4ed8]" />
+                        <span>Sinkronkan Semua Data ({wishesList.length} Ucapan, {guestList.length} Tamu)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Feedback Alerts */}
+                {scriptTestResult && (
+                  <div
+                    className={`p-3.5 rounded-xl border text-xs sm:text-sm flex items-start gap-2.5 animate-fade-in ${
+                      scriptTestResult.success
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'bg-red-50 border-red-300 text-red-800'
+                    }`}
+                  >
+                    {scriptTestResult.success ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <div className="font-bold">{scriptTestResult.message}</div>
+                      {scriptTestResult.details && (
+                        <div className="mt-1 text-xs text-emerald-700 font-mono">
+                          {scriptTestResult.details.spreadsheetTitle && (
+                            <div>Judul Dokumen: <b>{scriptTestResult.details.spreadsheetTitle}</b></div>
+                          )}
+                          {scriptTestResult.details.serverTime && (
+                            <div>Waktu Server: {scriptTestResult.details.serverTime}</div>
+                          )}
+                        </div>
+                      )}
+                      {!scriptTestResult.success && (
+                        <div className="mt-1.5 text-xs text-red-700 leading-relaxed">
+                          <b>Tips Mengatasi:</b> Pastikan di menu Deploy Apps Script, kolom <i>"Who has access"</i> dipilih <b>"Anyone" (Siapa saja)</b>, bukan "Only myself".
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setScriptTestResult(null)}
+                      className="text-gray-400 hover:text-gray-600 font-bold p-1 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
+                {scriptSyncResult && (
+                  <div
+                    className={`p-3.5 rounded-xl border text-xs sm:text-sm flex items-start gap-2.5 animate-fade-in ${
+                      scriptSyncResult.success
+                        ? 'bg-blue-50 border-blue-300 text-blue-800'
+                        : 'bg-amber-50 border-amber-300 text-amber-800'
+                    }`}
+                  >
+                    {scriptSyncResult.success ? (
+                      <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <div className="font-bold">{scriptSyncResult.message}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setScriptSyncResult(null)}
+                      className="text-gray-400 hover:text-gray-600 font-bold p-1 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Script Code Viewer & Copy Card */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-[#edf2f7]">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-[#2d3748] flex items-center gap-2">
+                    <FileCode className="w-5 h-5 text-[#0f7b40]" />
+                    <span>Kode Script Google Apps Script (Code.gs)</span>
+                  </h3>
+                  <p className="text-xs text-[#718096] mt-0.5">
+                    Salin seluruh kode ini, lalu tempelkan ke editor Google Apps Script di Spreadsheet Anda.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyScriptCode}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                      hasCopiedScript
+                        ? 'bg-emerald-600 text-white ring-2 ring-emerald-300'
+                        : 'bg-[#0f7b40] hover:bg-[#0c6333] text-white'
+                    }`}
+                  >
+                    {hasCopiedScript ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{hasCopiedScript ? 'Kode Tersalin!' : 'Salin Semua Kode'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadScriptFile}
+                    className="px-3.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#4a5568] text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Unduh file Code.gs ke perangkat"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Unduh .gs</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Code Box */}
+              <div className="relative rounded-xl overflow-hidden border border-[#2d3748] bg-[#1e293b] text-gray-200">
+                <div className="bg-[#0f172a] px-4 py-2 border-b border-[#334155] flex items-center justify-between text-xs text-gray-400">
+                  <span className="font-mono text-emerald-400 font-semibold">📄 google-apps-script/Code.gs</span>
+                  <span>Google Apps Script (JavaScript)</span>
+                </div>
+                <div className="max-h-96 overflow-y-auto p-4 font-mono text-xs leading-relaxed select-all">
+                  <pre className="whitespace-pre text-emerald-300/90 font-mono">
+                    {scriptCode || 'Memuat kode script Google Apps Script...'}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            {/* Step-by-Step Installation Tutorial */}
+            <div className="bg-[#f8fafc] p-5 sm:p-6 rounded-2xl border border-[#cbd5e1] space-y-4">
+              <h3 className="text-base sm:text-lg font-bold text-[#1e293b] flex items-center gap-2">
+                <span>📖 Panduan Lengkap Memasang di Google Apps Script (2 Menit)</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Step 1 */}
+                <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-2xs space-y-1.5">
+                  <div className="flex items-center gap-2 text-[#0f7b40] font-bold text-sm">
+                    <span className="w-6 h-6 rounded-full bg-[#0f7b40] text-white flex items-center justify-center text-xs">1</span>
+                    <span>Buka Google Sheets Baru</span>
+                  </div>
+                  <p className="text-xs text-[#64748b] leading-relaxed">
+                    Buka <a href="https://sheets.google.com" target="_blank" rel="noreferrer" className="text-[#0f7b40] underline font-semibold">sheets.google.com</a>, klik <b>Kosong (Blank)</b>, dan beri nama file misalnya <i>"Buku Tamu Jaka & Dian"</i>.
+                  </p>
+                </div>
+
+                {/* Step 2 */}
+                <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-2xs space-y-1.5">
+                  <div className="flex items-center gap-2 text-[#0f7b40] font-bold text-sm">
+                    <span className="w-6 h-6 rounded-full bg-[#0f7b40] text-white flex items-center justify-center text-xs">2</span>
+                    <span>Buka Menu Apps Script</span>
+                  </div>
+                  <p className="text-xs text-[#64748b] leading-relaxed">
+                    Di bilah menu atas Google Sheets, klik menu <b>Ekstensi (Extensions)</b> &gt; pilih <b>Apps Script</b>. Jendela editor kode Google Script akan terbuka.
+                  </p>
+                </div>
+
+                {/* Step 3 */}
+                <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-2xs space-y-1.5">
+                  <div className="flex items-center gap-2 text-[#0f7b40] font-bold text-sm">
+                    <span className="w-6 h-6 rounded-full bg-[#0f7b40] text-white flex items-center justify-center text-xs">3</span>
+                    <span>Tempelkan Kode Script & Simpan</span>
+                  </div>
+                  <p className="text-xs text-[#64748b] leading-relaxed">
+                    Hapus semua tulisan bawaan di <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-800 font-mono">Code.gs</code>, lalu klik tombol <b>"Salin Semua Kode"</b> di atas dan tempelkan (Ctrl + V). Tekan <b>Ctrl + S</b> (ikon disket) untuk menyimpan.
+                  </p>
+                </div>
+
+                {/* Step 4 */}
+                <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-2xs space-y-1.5">
+                  <div className="flex items-center gap-2 text-[#0f7b40] font-bold text-sm">
+                    <span className="w-6 h-6 rounded-full bg-[#0f7b40] text-white flex items-center justify-center text-xs">4</span>
+                    <span>Terapkan sebagai Aplikasi Web</span>
+                  </div>
+                  <p className="text-xs text-[#64748b] leading-relaxed">
+                    Klik tombol biru <b>Terapkan (Deploy)</b> di pojok kanan atas &gt; pilih <b>Penerapan Baru (New Deployment)</b>. Klik ikon <b>Gear ⚙️</b> di sebelah "Pilih jenis", lalu pilih <b>Aplikasi Web (Web App)</b>.
+                  </p>
+                </div>
+
+                {/* Step 5 */}
+                <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-2xs space-y-1.5 md:col-span-2">
+                  <div className="flex items-center gap-2 text-[#0f7b40] font-bold text-sm">
+                    <span className="w-6 h-6 rounded-full bg-[#0f7b40] text-white flex items-center justify-center text-xs">5</span>
+                    <span>Atur Izin Akses "Siapa saja (Anyone)" — SANGAT PENTING!</span>
+                  </div>
+                  <div className="text-xs text-[#475569] leading-relaxed space-y-1 pl-8">
+                    <div>• <b>Deskripsi</b>: Undangan Pernikahan Jaka & Dian</div>
+                    <div>• <b>Jalankan sebagai (Execute as)</b>: <b>Saya (email Anda)</b></div>
+                    <div>• <b>Siapa yang memiliki akses (Who has access)</b>: <b className="text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Siapa saja (Anyone)</b> <i>(Wajib dipilih agar website undangan dapat mengirim data ke Sheets tanpa meminta login Google)</i>.</div>
+                    <div className="pt-1 text-[#64748b]">
+                      Klik <b>Terapkan</b> &gt; Klik <b>Beri Akses (Review Permissions)</b> &gt; Pilih email Anda &gt; Klik <i>Lanjutan (Advanced)</i> &gt; Klik <i>Buka project (tidak aman)</i> &gt; Klik <b>Izinkan (Allow)</b>.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 6 */}
+                <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-2xs space-y-1.5 md:col-span-2">
+                  <div className="flex items-center gap-2 text-[#0f7b40] font-bold text-sm">
+                    <span className="w-6 h-6 rounded-full bg-[#0f7b40] text-white flex items-center justify-center text-xs">6</span>
+                    <span>Salin URL & Masukkan ke Formulir di Atas</span>
+                  </div>
+                  <p className="text-xs text-[#64748b] leading-relaxed pl-8">
+                    Salin <b>URL Aplikasi Web</b> yang berakhiran <code className="bg-emerald-50 text-emerald-800 px-1 py-0.5 rounded font-mono font-bold">/exec</code>. Tempelkan di kolom <i>"URL Aplikasi Web"</i> di atas, klik <b>Simpan URL</b>, lalu uji koneksi dengan menekan <b>Uji Koneksi Google Script</b>.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Spreadsheet Auto-features info */}
+            <div className="bg-[#ecfdf5] border-l-4 border-[#10b981] p-4 rounded-r-xl text-xs sm:text-sm text-[#065f46] space-y-1 leading-relaxed">
+              <div className="font-bold flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-[#10b981]" />
+                <span>Otomatisasi Tabel di Google Spreadsheet</span>
+              </div>
+              <p>
+                Anda tidak perlu repot membuat tabel atau mengetik judul kolom secara manual. Script akan secara otomatis membuat dan menata 2 lembar sheet berdesain elegan:
+              </p>
+              <ul className="list-disc list-inside space-y-0.5 text-xs text-[#047857] pl-1 pt-1">
+                <li><b>Sheet "Ucapan & RSVP"</b>: Header biru (#5797d0), berisi Waktu Masuk, Nama Tamu, Konfirmasi Kehadiran (✅ Hadir / ❓ Ragu / ❌ Tidak Hadir), dan Pesan Ucapan.</li>
+                <li><b>Sheet "Daftar Tamu"</b>: Header pink (#ec79b8), berisi No, Nama Tamu, Kategori, No WhatsApp, dan Link Undangan Khusus tamu tersebut.</li>
+              </ul>
             </div>
           </div>
         )}
@@ -3319,6 +4218,191 @@ Hormat kami,
         onClose={() => setPhotoEditorConfig((prev) => ({ ...prev, isOpen: false }))}
         onSavePhoto={handleSavePhotoFromEditor}
       />
+
+      {/* Live Preview Modal (Pratinjau Langsung Hasil Edit) */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl border border-gray-200 overflow-hidden animate-scale-up">
+            {/* Header Pratinjau */}
+            <div className="bg-[#5797d0] text-white px-4 py-3 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <Eye className="w-5 h-5 text-cyan-200" />
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base leading-tight">👁️ Pratinjau Langsung Undangan</h3>
+                  <p className="text-[11px] text-white/80">Menampilkan data yang sedang Anda edit secara live</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(false)}
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold cursor-pointer transition-all"
+                title="Tutup Pratinjau"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Sub-header Notice */}
+            <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-2 flex items-center justify-between text-xs text-emerald-800 shrink-0">
+              <span className="flex items-center gap-1.5 font-medium">
+                <Check className="w-4 h-4 text-emerald-600" />
+                Data Akad, Resepsi, Foto, & Cerita langsung terhubung!
+              </span>
+              <span className="text-[11px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                Mobile View
+              </span>
+            </div>
+
+            {/* Scrollable Mobile Phone Frame */}
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-100 flex justify-center">
+              <div className="w-full max-w-[420px] bg-[#f8f7f4] rounded-2xl shadow-md border border-[#e2dcce] overflow-hidden flex flex-col items-center">
+                {/* 1. Cover Preview */}
+                <div className="w-full border-b-2 border-dashed border-[#5797d0]/20">
+                  <CoverSection
+                    config={formData}
+                    guestName="Bapak/Ibu Tamu Undangan"
+                    onOpenInvitation={() => {}}
+                  />
+                </div>
+
+                {/* 2. Isi Lengkap Undangan */}
+                <div className="w-full flex flex-col items-center pt-2">
+                  <Page2TitleQuote config={formData} />
+                  <BrideGroomSection config={formData} />
+                  <SaveTheDateSection config={formData} />
+                  <EventDetailsSection config={formData} />
+                  <LoveStorySection config={formData} />
+                  <WeddingGiftSection config={formData} />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Modal */}
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between shrink-0">
+              <span className="text-xs text-gray-500">
+                Semua teks dan alamat di atas sudah sesuai yang Anda ketik.
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[#5797d0] hover:bg-[#4784ba] text-white font-bold text-xs sm:text-sm cursor-pointer transition-all shadow-xs"
+              >
+                Tutup & Lanjut Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export to GitHub weddingData.ts Modal */}
+      {isExportCodeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 overflow-hidden animate-scale-up">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#2c5282] to-[#5797d0] text-white px-5 py-4 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-white/10 text-amber-300">
+                  <FileCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base sm:text-lg leading-tight">
+                    Ekspor Data ke GitHub (weddingData.ts)
+                  </h3>
+                  <p className="text-xs text-white/80">
+                    Aktifkan semua perubahan secara permanen untuk seluruh tamu di dunia
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsExportCodeOpen(false);
+                  setCopiedCodeSuccess(false);
+                }}
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold cursor-pointer transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 flex-1 overflow-y-auto space-y-4 text-xs sm:text-sm">
+              <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-[#2c5282] leading-relaxed">
+                <strong>Cara Kerja:</strong> Kode di bawah ini sudah otomatis terisi dengan seluruh perubahan yang baru saja Anda ketik di menu Admin (Alamat Akad, Resepsi, Cerita Cinta, Musik, Nama Pengantin, dll).
+                Cukup klik tombol <strong>"Salin Seluruh Kode"</strong> lalu tempelkan ke file <strong>`src/data/weddingData.ts`</strong> di GitHub.
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-bold text-gray-700 text-xs">
+                    Kode Siap Pakai untuk `src/data/weddingData.ts`:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(getGeneratedWeddingDataCode()).then(() => {
+                        setCopiedCodeSuccess(true);
+                        setTimeout(() => setCopiedCodeSuccess(false), 3000);
+                      });
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      copiedCodeSuccess
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-[#5797d0] hover:bg-[#4383bd] text-white shadow-xs'
+                    }`}
+                  >
+                    {copiedCodeSuccess ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>Kode Berhasil Tersalin!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Salin Seluruh Kode</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <textarea
+                  readOnly
+                  rows={14}
+                  value={getGeneratedWeddingDataCode()}
+                  className="w-full p-3 font-mono text-xs bg-gray-900 text-emerald-400 rounded-xl border border-gray-700 focus:outline-none select-all resize-none shadow-inner"
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-between flex-wrap gap-2">
+                <a
+                  href="https://github.com/official-afolele/undangan/blob/main/src/data/weddingData.ts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#5797d0] hover:underline"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Buka file `src/data/weddingData.ts` di GitHub Anda</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsExportCodeOpen(false);
+                  setCopiedCodeSuccess(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
