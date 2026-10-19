@@ -1,5 +1,5 @@
-import React from 'react';
-import { Mail } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Camera } from 'lucide-react';
 import { WeddingConfig } from '../types';
 import { normalizeImageUrl } from '../utils/imageUrl';
 
@@ -7,19 +7,20 @@ interface CoverSectionProps {
   config: WeddingConfig;
   guestName: string;
   onOpenInvitation: () => void;
-  onEditPhoto?: (role: 'groom' | 'bride') => void;
+  onEditPhoto?: (role: 'groom' | 'bride' | 'couple') => void;
 }
 
 export const CoverSection: React.FC<CoverSectionProps> = ({
   config,
   guestName,
   onOpenInvitation,
+  onEditPhoto,
 }) => {
+  const [couplePhotoError, setCouplePhotoError] = useState(false);
+
   const bridePhotoUrl = normalizeImageUrl(config.bride.photo);
   const groomPhotoUrl = normalizeImageUrl(config.groom.photo);
-  const coupleCoverUrl = config.couplePhoto && config.couplePhoto !== '/couple-photo.jpg'
-    ? normalizeImageUrl(config.couplePhoto)
-    : null;
+  const coupleCoverUrl = config.couplePhoto ? normalizeImageUrl(config.couplePhoto) : null;
 
   return (
     <section 
@@ -28,14 +29,15 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
     >
       {/* ================= BACKGROUND PORTRAITS ================= */}
       <div className="absolute inset-0 w-full h-full pointer-events-none select-none overflow-hidden bg-[#1548a4]">
-        {coupleCoverUrl ? (
-          /* Single Combined Photo (Foto Berdua) */
+        {coupleCoverUrl && !couplePhotoError ? (
+          /* Single Combined Photo of Dian & Jaka */
           <img
             src={coupleCoverUrl}
             alt="Dian & Jaka"
             loading="eager"
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover object-center"
+            onError={() => setCouplePhotoError(true)}
+            className="w-full h-full object-cover object-top"
           />
         ) : (
           /* Side-by-Side: Dian di Kiri, Jaka di Kanan */
@@ -77,7 +79,7 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
         )}
       </div>
 
-      {/* Top Subtle Blue Gradient (Senada 100% dengan biru latar pas foto #1548a4) */}
+      {/* Top Subtle Blue Gradient */}
       <div 
         aria-hidden="true" 
         className="absolute inset-x-0 top-0 h-44 sm:h-52 bg-gradient-to-b from-[#113e8d]/80 via-[#1548a4]/50 to-transparent pointer-events-none z-10" 
@@ -86,7 +88,7 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
       {/* Center Subtle Blue Blend */}
       <div 
         aria-hidden="true" 
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-[#1548a4]/30 to-transparent pointer-events-none z-10" 
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-[#1548a4]/25 to-transparent pointer-events-none z-10" 
       />
 
       {/* Bottom Royal Blue Gradient Overlay */}
@@ -133,6 +135,19 @@ export const CoverSection: React.FC<CoverSectionProps> = ({
           <Mail className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
           <span>Buka Undangan</span>
         </button>
+
+        {/* Tombol Cepat Ganti Foto Cover */}
+        {onEditPhoto && (
+          <button
+            type="button"
+            onClick={() => onEditPhoto('couple')}
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/80 hover:text-white text-[11px] font-medium backdrop-blur-xs transition-colors cursor-pointer"
+            title="Ganti Foto Sampul"
+          >
+            <Camera className="w-3 h-3" />
+            <span>Ganti Foto Cover</span>
+          </button>
+        )}
       </div>
     </section>
   );
