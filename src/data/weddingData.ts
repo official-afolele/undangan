@@ -21,7 +21,29 @@ export const weddingData: WeddingConfig = {
     mother: 'Ibu Sumartik',
     instagram: '@harinurdian'
   },
-  couplePhoto: '/couple-photo.jpg',
+  couplePhoto: '/couple-cover.jpg',
+  gallery: [
+    {
+      id: '1',
+      url: '/couple-cover.jpg',
+      caption: 'Dian & Jaka'
+    },
+    {
+      id: '2',
+      url: '/uploads/groom_photo.jpg',
+      caption: 'Jaka, S.Kom'
+    },
+    {
+      id: '3',
+      url: '/uploads/bride_photo.jpg',
+      caption: 'Harinurdian, S.E'
+    },
+    {
+      id: '4',
+      url: '/couple-photo.jpg',
+      caption: 'Menuju Hari Bahagia'
+    }
+  ],
   eventDate: '2026-12-26T08:00:00+07:00',
   quote: `Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda (kebesaran Allah) bagi kaum yang berpikir.`,
   quoteSource: 'Q.S Ar-Rum : 21',
@@ -31,7 +53,7 @@ export const weddingData: WeddingConfig = {
     isoDate: '2026-12-26',
     timeStr: 'Pukul 08.00 WIB - Selesai',
     venueName: 'Kediaman Mempelai Wanita',
-    address: 'Jalan Pashanda Bhakti, RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
+    address: 'Jalan Pashanda Bhakti, RT 005 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
     mapsUrl: 'https://maps.app.goo.gl/PJBKEHqAw4uwG5Ms8'
   },
   resepsi: {
@@ -40,7 +62,7 @@ export const weddingData: WeddingConfig = {
     isoDate: '2026-12-27',
     timeStr: 'Pukul 14.00 - 19.00 WIB',
     venueName: 'Kediaman Mempelai Wanita',
-    address: 'Jalan Pashanda Bhakti, RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
+    address: 'Jalan Pashanda Bhakti, RT 005 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat',
     mapsUrl: 'https://maps.app.goo.gl/PJBKEHqAw4uwG5Ms8'
   },
   stories: [
@@ -76,7 +98,7 @@ export const weddingData: WeddingConfig = {
   ],
   giftAddress: {
     recipient: 'Dian',
-    fullAddress: 'Jl. Pashanda Bhakti RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipitteja, Kec. Teluk Keramat, Kab. Sambas'
+    fullAddress: 'Jl. Pashanda Bhakti RT 005 RW 002, Dusun Pangkalan Betung, Desa Pipitteja, Kec. Teluk Keramat, Kab. Sambas'
   },
   musicTitle: 'Cinta Terakhir (Cover)',
   musicArtist: 'Ari Lasso / Cover',
@@ -93,3 +115,4 @@ export const initialGuests: GuestItem[] = [
   { id: '3', name: 'Keluarga Besar Hatta', category: 'Keluarga', note: 'Keluarga mempelai wanita' },
   { id: '4', name: 'Rekan Kerja Dinas', category: 'Kantor', note: 'Teman kantor' },
 ];
+
