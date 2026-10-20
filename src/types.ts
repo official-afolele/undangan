@@ -69,3 +69,9 @@ export interface WeddingConfig {
   musicArtist: string;
   audioUrl: string;
 }
+
+export interface GalleryPhoto {
+  id: string;
+  url: string;
+  caption?: string;
+}
