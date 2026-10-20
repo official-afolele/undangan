@@ -159,6 +159,9 @@ export default function App() {
         if (!parsed.stories || !Array.isArray(parsed.stories) || parsed.stories.length === 0) {
           parsed.stories = weddingData.stories;
         }
+        if (!parsed.gallery || !Array.isArray(parsed.gallery) || parsed.gallery.length === 0) {
+          parsed.gallery = weddingData.gallery;
+        }
         return parsed;
       }
     } catch {
@@ -196,8 +199,13 @@ export default function App() {
       .then((res) => (res.ok ? res.json() : null))
       .then((serverConfig: WeddingConfig | null) => {
         if (!isMounted || !serverConfig) return;
-        const normalized = {
+        const normalized: WeddingConfig = {
           ...serverConfig,
+          gallery: (Array.isArray(serverConfig.gallery) && serverConfig.gallery.length > 0)
+            ? serverConfig.gallery
+            : (Array.isArray(config.gallery) && config.gallery.length > 0
+                ? config.gallery
+                : (weddingData.gallery || [])),
           stories: Array.isArray(serverConfig.stories) && serverConfig.stories.length > 0
             ? serverConfig.stories
             : weddingData.stories,
@@ -366,6 +374,11 @@ export default function App() {
   const handleSaveConfig = async (newConfig: WeddingConfig): Promise<boolean> => {
     const sanitized: WeddingConfig = {
       ...newConfig,
+      gallery: Array.isArray(newConfig.gallery) && newConfig.gallery.length > 0
+        ? newConfig.gallery
+        : (Array.isArray(config.gallery) && config.gallery.length > 0
+            ? config.gallery
+            : (weddingData.gallery || [])),
       stories: Array.isArray(newConfig.stories) && newConfig.stories.length > 0
         ? newConfig.stories
         : weddingData.stories,
@@ -388,7 +401,19 @@ export default function App() {
     try {
       localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(sanitized));
     } catch {
-      // storage fallback
+      // If quota exceeded due to large base64 photos, strip heavy base64 for local storage cache
+      try {
+        const lightweight = {
+          ...sanitized,
+          gallery: sanitized.gallery?.map((g) => ({
+            ...g,
+            url: g.url && g.url.length > 1000 ? '/couple-cover.jpg' : g.url
+          }))
+        };
+        localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(lightweight));
+      } catch {
+        // storage fallback
+      }
     }
 
     // 2. Persist to server so ALL browsers & devices immediately see updated photos and details
