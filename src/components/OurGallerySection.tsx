@@ -12,7 +12,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Ambil daftar foto galeri dari config, atau fallback ke 2 foto prewedding pilihan
+  // Ambil daftar foto galeri dari config, atau fallback ke 4 foto prewedding pilihan
   const photos: GalleryPhoto[] = (config.gallery && config.gallery.length > 0)
     ? config.gallery
     : [
@@ -23,6 +23,16 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
         },
         {
           id: 'gal_2',
+          url: config.groom?.photo || '/uploads/groom_photo.jpg',
+          caption: config.groom?.fullName || config.groom?.name || 'Jaka, S.Kom'
+        },
+        {
+          id: 'gal_3',
+          url: config.couplePhoto || '/couple-cover.jpg',
+          caption: 'Dian & Jaka'
+        },
+        {
+          id: 'gal_4',
           url: '/couple-photo.jpg',
           caption: 'Menuju Hari Bahagia'
         }
