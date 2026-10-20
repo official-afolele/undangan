@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { WeddingConfig, GalleryPhoto } from '../types';
 import { normalizeImageUrl } from '../utils/imageUrl';
 import { Sparkles, X, ChevronLeft, ChevronRight, Eye, MoveHorizontal } from 'lucide-react';
-import { DEFAULT_COVER_PHOTO_BASE64 } from './coverPhotoBase64';
 
 interface OurGallerySectionProps {
   config: WeddingConfig;
@@ -155,8 +154,6 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
                       const target = e.currentTarget;
                       if (!target.src.includes('couple-photo.jpg')) {
                         target.src = '/couple-photo.jpg';
-                      } else {
-                        target.src = DEFAULT_COVER_PHOTO_BASE64;
                       }
                     }}
                     className="w-full h-full object-cover object-center group-hover/img:scale-108 transition-transform duration-500 ease-out"
