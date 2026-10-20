@@ -19,7 +19,29 @@
     "mother": "Ibu Sumartik",
     "instagram": "@harinurdian"
   },
-  "couplePhoto": "/couple-photo.jpg",
+  "couplePhoto": "/couple-cover.jpg",
+  "gallery": [
+    {
+      "id": "1",
+      "url": "/couple-cover.jpg",
+      "caption": "Dian & Jaka"
+    },
+    {
+      "id": "2",
+      "url": "/uploads/groom_photo.jpg",
+      "caption": "Jaka, S.Kom"
+    },
+    {
+      "id": "3",
+      "url": "/uploads/bride_photo.jpg",
+      "caption": "Harinurdian, S.E"
+    },
+    {
+      "id": "4",
+      "url": "/couple-photo.jpg",
+      "caption": "Menuju Hari Bahagia"
+    }
+  ],
   "eventDate": "2026-12-26T08:00:00+07:00",
   "quote": "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda (kebesaran Allah) bagi kaum yang berpikir.",
   "quoteSource": "Q.S Ar-Rum : 21",
