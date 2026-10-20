@@ -7,6 +7,7 @@ import { Page2TitleQuote } from './components/Page2TitleQuote';
 import { BrideGroomSection } from './components/BrideGroomSection';
 import { SaveTheDateSection } from './components/SaveTheDateSection';
 import { EventDetailsSection } from './components/EventDetailsSection';
+import { OurGallerySection } from './components/OurGallerySection';
 import { LoveStorySection } from './components/LoveStorySection';
 import { WeddingGiftSection } from './components/WeddingGiftSection';
 import { WishesRsvpSection } from './components/WishesRsvpSection';
@@ -39,10 +40,9 @@ const checkIsAdminPath = (): boolean => {
   return (
     path === '/admin' ||
     path.startsWith('/admin/') ||
-    search.includes('admin=true') ||
+    search.includes('admin') ||
     search.includes('page=admin') ||
-    hash === '#/admin' ||
-    hash.startsWith('#/admin')
+    hash.includes('admin')
   );
 };
 
@@ -156,6 +156,9 @@ export default function App() {
         if (!parsed.bankAccounts || parsed.bankAccounts.length < 2) {
           parsed.bankAccounts = weddingData.bankAccounts;
         }
+        if (!parsed.stories || !Array.isArray(parsed.stories) || parsed.stories.length === 0) {
+          parsed.stories = weddingData.stories;
+        }
         return parsed;
       }
     } catch {
@@ -195,6 +198,9 @@ export default function App() {
         if (!isMounted || !serverConfig) return;
         const normalized = {
           ...serverConfig,
+          stories: Array.isArray(serverConfig.stories) && serverConfig.stories.length > 0
+            ? serverConfig.stories
+            : weddingData.stories,
           groom: {
             ...serverConfig.groom,
             photo: normalizeImageUrl(serverConfig.groom?.photo || weddingData.groom.photo),
@@ -256,9 +262,9 @@ export default function App() {
       }
 
       if (guest && guest !== 'Tamu Undangan') {
-        document.title = `Undangan Pernikahan Jaka & Dian - ${guest}`;
+        document.title = `Undangan Pernikahan Dian & Jaka - ${guest}`;
       } else {
-        document.title = 'Undangan Pernikahan Jaka & Dian';
+        document.title = 'Undangan Pernikahan Dian & Jaka';
       }
     };
 
@@ -360,6 +366,9 @@ export default function App() {
   const handleSaveConfig = async (newConfig: WeddingConfig): Promise<boolean> => {
     const sanitized: WeddingConfig = {
       ...newConfig,
+      stories: Array.isArray(newConfig.stories) && newConfig.stories.length > 0
+        ? newConfig.stories
+        : weddingData.stories,
       groom: {
         ...newConfig.groom,
         photo: normalizeImageUrl(newConfig.groom?.photo) || weddingData.groom.photo,
@@ -393,6 +402,26 @@ export default function App() {
     } catch (err) {
       console.warn('Could not persist config to server:', err);
       return false;
+    }
+  };
+
+  const handleUpdateCoverPhoto = async (newUrl: string) => {
+    const updated: WeddingConfig = {
+      ...config,
+      couplePhoto: newUrl,
+    };
+    setConfig(updated);
+    try {
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(updated));
+    } catch {}
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+    } catch (err) {
+      console.warn('Could not persist cover photo to server:', err);
     }
   };
 
@@ -494,7 +523,7 @@ export default function App() {
         <div className="w-full flex-1 flex justify-center py-0 sm:py-6 px-0 sm:px-3">
           {/* Paper Container with mobile-first friendly width */}
           <div
-            className="paper-texture w-full max-w-[480px] min-h-screen bg-[#f8f7f4] sm:rounded-2xl sm:shadow-[0_10px_35px_rgba(0,0,0,0.12)] border-0 sm:border border-[#e2dcce] relative overflow-x-hidden transition-all duration-300"
+            className="paper-texture w-full max-w-[480px] min-h-screen bg-[#f8f7f4] sm:rounded-2xl sm:shadow-[0_10px_35px_rgba(0,0,0,0.12)] border-0 sm:border border-[#e2dcce] relative overflow-hidden transition-all duration-300"
           >
             {!isOpened ? (
               /* COVER VIEW */
@@ -502,7 +531,6 @@ export default function App() {
                 config={config}
                 guestName={guestName}
                 onOpenInvitation={handleOpenInvitation}
-                onEditPhoto={handleOpenPhotoEditorFromInvitation}
               />
             ) : (
               /* MAIN INVITATION CONTENT */
@@ -510,17 +538,13 @@ export default function App() {
                 {/* Title, Quote & Music Player */}
                 <Page2TitleQuote config={config} />
 
-                {/* Bride & Groom Section */}
+                {/* Bride & Groom Section (Bersih untuk tamu - fitur edit foto hanya ada di Admin) */}
                 <BrideGroomSection 
                   config={config} 
-                  onEditPhoto={handleOpenPhotoEditorFromInvitation}
                 />
 
                 {/* Save The Date & Countdown */}
                 <SaveTheDateSection config={config} />
-
-                {/* Event Details: Akad & Resepsi */}
-                <EventDetailsSection config={config} />
 
                 {/* Event Details: Akad & Resepsi */}
                 <EventDetailsSection config={config} />
@@ -535,7 +559,10 @@ export default function App() {
                 <WeddingGiftSection config={config} />
 
                 {/* Wishes & RSVP Form */}
-                <WishesRsvpSection initialGuestName={guestName} />
+                <WishesRsvpSection 
+                  initialGuestName={guestName} 
+                  googleScriptUrl={config.googleScriptUrl}
+                />
 
                 {/* Footer (clean for guests, secret 5-click easter egg navigates to admin) */}
                 <FooterSection 
