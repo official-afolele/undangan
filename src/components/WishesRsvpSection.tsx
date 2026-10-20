@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { WishEntry } from '../types';
-import { initialWishes } from '../data/weddingData';
 import { 
   Heart, 
   Send, 
@@ -40,7 +39,7 @@ export const WishesRsvpSection: React.FC<WishesRsvpSectionProps> = ({
     } catch {
       // fallback
     }
-    return initialWishes;
+   return [];
   });
 
   const [name, setName] = useState(() => {
