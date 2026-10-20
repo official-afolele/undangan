@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { audioController } from '../utils/audioPlayer';
-import { Music, VolumeX, Users, Calendar, BookOpen, Gift, MessageSquare } from 'lucide-react';
+import { Music, VolumeX, Users, Calendar, BookOpen, Gift, MessageSquare, Image as ImageIcon } from 'lucide-react';
 
 export const FloatingControls: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(audioController.isPlaying);
@@ -62,6 +62,15 @@ export const FloatingControls: React.FC = () => {
         >
           <Calendar className="w-4 h-4 text-[#5797d0]" />
           <span>Acara</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => scrollTo('galeri')}
+          className="flex flex-col items-center px-2 py-1 rounded-lg text-[#527595] hover:text-[#5797d0] hover:bg-[#5797d0]/10 active:scale-95 transition-all text-[11px] font-patrick cursor-pointer"
+        >
+          <ImageIcon className="w-4 h-4 text-[#5797d0]" />
+          <span>Galeri</span>
         </button>
 
         <button
