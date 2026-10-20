@@ -52,10 +52,17 @@ export interface WishEntry {
   timestamp: string;
 }
 
+export interface GalleryPhoto {
+  id: string;
+  url: string;
+  caption?: string;
+}
+
 export interface WeddingConfig {
   groom: CoupleInfo;
   bride: CoupleInfo;
   couplePhoto?: string;
+  gallery?: GalleryPhoto[];
   eventDate: string;
   quote: string;
   quoteSource: string;
@@ -68,10 +75,6 @@ export interface WeddingConfig {
   musicTitle: string;
   musicArtist: string;
   audioUrl: string;
-}
-
-export interface GalleryPhoto {
-  id: string;
-  url: string;
-  caption?: string;
+  googleScriptUrl?: string;
+  customDomain?: string;
 }
