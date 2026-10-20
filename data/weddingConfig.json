@@ -22,22 +22,12 @@
   "couplePhoto": "/couple-cover.jpg",
   "gallery": [
     {
-      "id": "1",
-      "url": "/couple-cover.jpg",
-      "caption": "Dian & Jaka"
-    },
-    {
-      "id": "2",
-      "url": "/uploads/groom_photo.jpg",
-      "caption": "Jaka, S.Kom"
-    },
-    {
-      "id": "3",
+      "id": "gal_1",
       "url": "/uploads/bride_photo.jpg",
       "caption": "Harinurdian, S.E"
     },
     {
-      "id": "4",
+      "id": "gal_2",
       "url": "/couple-photo.jpg",
       "caption": "Menuju Hari Bahagia"
     }
