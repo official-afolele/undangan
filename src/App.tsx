@@ -522,6 +522,12 @@ export default function App() {
                 {/* Event Details: Akad & Resepsi */}
                 <EventDetailsSection config={config} />
 
+                {/* Event Details: Akad & Resepsi */}
+                <EventDetailsSection config={config} />
+
+                {/* Our Gallery (Prewedding Photo Gallery) */}
+                <OurGallerySection config={config} />
+
                 {/* Love Story */}
                 <LoveStorySection config={config} />
 
