@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { WeddingConfig, GuestItem, WishEntry } from '../types';
+import { WeddingConfig, GuestItem, WishEntry, GalleryPhoto } from '../types';
 import { weddingData } from '../data/weddingData';
 import { 
   ArrowLeft, 
@@ -44,7 +44,10 @@ import {
   FileSpreadsheet,
   FileCode,
   CheckCheck,
-  Globe
+  Globe,
+  ArrowUp,
+  ArrowDown,
+  Image as ImageIcon
 } from 'lucide-react';
 import { normalizeImageUrl } from '../utils/imageUrl';
 import { validateAdminPassword } from '../utils/auth';
@@ -54,6 +57,7 @@ import { Page2TitleQuote } from './Page2TitleQuote';
 import { BrideGroomSection } from './BrideGroomSection';
 import { SaveTheDateSection } from './SaveTheDateSection';
 import { EventDetailsSection } from './EventDetailsSection';
+import { OurGallerySection } from './OurGallerySection';
 import { LoveStorySection } from './LoveStorySection';
 import { WeddingGiftSection } from './WeddingGiftSection';
 
@@ -106,7 +110,7 @@ interface AdminPanelProps {
   currentPassword?: string;
 }
 
-type AdminTab = 'pengantin' | 'acara' | 'musik_cerita' | 'kado' | 'tamu' | 'ucapan' | 'google_script';
+type AdminTab = 'pengantin' | 'acara' | 'galeri' | 'musik_cerita' | 'kado' | 'tamu' | 'ucapan' | 'google_script';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   config,
@@ -127,6 +131,102 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [justSaved, setJustSaved] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [saveToast, setSaveToast] = useState<{ title: string; detail: string; time: string } | null>(null);
+
+  // Our Gallery state for Admin
+  const [newGalleryUrl, setNewGalleryUrl] = useState('');
+  const [newGalleryCaption, setNewGalleryCaption] = useState('');
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+
+  const handleUploadGalleryPhoto = async (file: File) => {
+    if (!file) return;
+    if (file.size > 30 * 1024 * 1024) {
+      alert('Ukuran file foto maksimal 30MB.');
+      return;
+    }
+    setIsUploadingGallery(true);
+    try {
+      let finalUrl = '';
+      try {
+        const uploadFormData = new FormData();
+        uploadFormData.append('photo', file);
+        const res = await fetch('/api/upload-file', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) finalUrl = data.url;
+        }
+      } catch {
+        // fallback
+      }
+      if (!finalUrl) {
+        const compressed = await compressImageFile(file, 1200, 0.85);
+        finalUrl = compressed;
+      }
+      setNewGalleryUrl(finalUrl);
+    } catch (err) {
+      console.error('Upload gallery error:', err);
+      alert('Gagal memproses foto. Silakan coba lagi.');
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
+  const handleAddGalleryPhoto = () => {
+    if (!newGalleryUrl.trim()) {
+      alert('Silakan pilih foto atau masukkan link URL foto terlebih dahulu.');
+      return;
+    }
+    const currentGallery = (formData.gallery && Array.isArray(formData.gallery))
+      ? [...formData.gallery]
+      : [];
+    const newPhoto: GalleryPhoto = {
+      id: `gal_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      url: newGalleryUrl.trim(),
+      caption: newGalleryCaption.trim() || undefined,
+    };
+    setFormData({
+      ...formData,
+      gallery: [...currentGallery, newPhoto],
+    });
+    setNewGalleryUrl('');
+    setNewGalleryCaption('');
+  };
+
+  const handleRemoveGalleryPhoto = (index: number) => {
+    if (!formData.gallery) return;
+    if (!confirm('Hapus foto ini dari galeri?')) return;
+    const updated = formData.gallery.filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      gallery: updated,
+    });
+  };
+
+  const handleMoveGalleryPhoto = (index: number, direction: 'up' | 'down') => {
+    if (!formData.gallery) return;
+    const list = [...formData.gallery];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+    const temp = list[index];
+    list[index] = list[targetIndex];
+    list[targetIndex] = temp;
+    setFormData({
+      ...formData,
+      gallery: list,
+    });
+  };
+
+  const handleUpdateGalleryCaption = (index: number, caption: string) => {
+    if (!formData.gallery) return;
+    const list = [...formData.gallery];
+    list[index] = { ...list[index], caption };
+    setFormData({
+      ...formData,
+      gallery: list,
+    });
+  };
 
   // Wishes state for Admin
   const [wishesList, setWishesList] = useState<WishEntry[]>([]);
@@ -1482,6 +1582,19 @@ Hormat kami,
           >
             <Music className="w-4 h-4" />
             <span>🎵 Musik & Cerita</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('galeri')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+              activeTab === 'galeri'
+                ? 'bg-[#5797d0] text-white shadow-xs'
+                : 'bg-white text-[#527595] hover:bg-[#e9eef2]'
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            <span>📷 Galeri Prewedding ({formData.gallery?.length || 0})</span>
           </button>
 
           <button
@@ -2883,6 +2996,252 @@ Hormat kami,
           </div>
         )}
 
+        {/* TAB GALERI: FOTO PREWEDDING */}
+        {activeTab === 'galeri' && (
+          <div className="space-y-6">
+            {/* Header Box */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-[#5797d0] flex items-center gap-2">
+                    <Camera className="w-5 h-5 text-[#ef72b4]" />
+                    <span>Our Gallery (Foto Prewedding)</span>
+                  </h2>
+                  <p className="text-xs text-[#527595] mt-1">
+                    Kelola foto-foto prewedding dan momen bahagia yang ditampilkan di bagian Our Gallery (tepat di atas Love Story).
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-sky-50 border border-sky-200 text-[#5797d0] text-xs font-semibold rounded-full">
+                    Total: {formData.gallery?.length || 0} Foto
+                  </span>
+                </div>
+              </div>
+
+              {/* Form Tambah Foto Baru */}
+              <div className="p-4 rounded-xl bg-[#f8fbfe] border border-[#d2e4f5] space-y-4">
+                <h3 className="text-sm font-bold text-[#2c3e50] flex items-center gap-1.5">
+                  <Plus className="w-4 h-4 text-[#ef72b4]" />
+                  <span>Tambah Foto Prewedding Baru</span>
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Upload atau Input URL */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4a5568] mb-1">
+                        Upload Foto dari HP / Komputer
+                      </label>
+                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#cbd5e0] hover:border-[#5797d0] text-xs font-medium text-[#4a5568] cursor-pointer transition-all hover:bg-sky-50 shadow-2xs">
+                        <Upload className="w-4 h-4 text-[#5797d0]" />
+                        <span>{isUploadingGallery ? 'Memproses Foto...' : 'Pilih File Foto (Maks 30MB)'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={isUploadingGallery}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadGalleryPhoto(file);
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4a5568] mb-1">
+                        Atau Masukkan Link / URL Foto
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="https://... atau /couple-cover.jpg"
+                        value={newGalleryUrl}
+                        onChange={(e) => setNewGalleryUrl(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-[#cbd5e0] text-xs outline-none focus:border-[#5797d0] focus:ring-1 focus:ring-[#5797d0]"
+                      />
+                    </div>
+
+                    {/* Presets Cepat */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] text-[#718096]">Pilihan Cepat:</span>
+                      <button
+                        type="button"
+                        onClick={() => setNewGalleryUrl('/couple-cover.jpg')}
+                        className="px-2 py-0.5 rounded-md bg-white border border-gray-200 text-[11px] text-[#5797d0] hover:bg-sky-50 cursor-pointer"
+                      >
+                        Foto Berdua Latar Biru
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewGalleryUrl('/couple-photo.jpg')}
+                        className="px-2 py-0.5 rounded-md bg-white border border-gray-200 text-[11px] text-[#5797d0] hover:bg-sky-50 cursor-pointer"
+                      >
+                        Foto Pasangan 2
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Keterangan / Caption & Preview */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4a5568] mb-1">
+                        Keterangan Foto (Caption) - Opsional
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: Menatap Masa Depan / Momen Bahagia"
+                        value={newGalleryCaption}
+                        onChange={(e) => setNewGalleryCaption(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-[#cbd5e0] text-xs outline-none focus:border-[#5797d0] focus:ring-1 focus:ring-[#5797d0]"
+                      />
+                    </div>
+
+                    {/* Preview Kotak Foto yang Akan Ditambah */}
+                    {newGalleryUrl && (
+                      <div className="flex items-center gap-3 p-2 bg-white rounded-xl border border-[#cbd5e0]">
+                        <img
+                          src={normalizeImageUrl(newGalleryUrl)}
+                          alt="Preview"
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-[#2c3e50] truncate">Siap Ditambahkan</p>
+                          <p className="text-[11px] text-[#718096] truncate">{newGalleryCaption || 'Tanpa keterangan'}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleAddGalleryPhoto}
+                      className="w-full py-2.5 px-4 rounded-xl bg-[#5797d0] hover:bg-[#4886be] active:scale-98 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tambahkan ke Galeri</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Daftar Foto Galeri yang Ada */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
+              <h3 className="text-base font-bold text-[#2c3e50] mb-3 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-[#5797d0]" />
+                <span>Koleksi Foto Galeri Saat Ini ({formData.gallery?.length || 0})</span>
+              </h3>
+
+              {(!formData.gallery || formData.gallery.length === 0) ? (
+                <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                  <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500">Belum ada foto dalam galeri.</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Gunakan formulir di atas untuk mengunggah foto prewedding.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {formData.gallery.map((photo, idx) => (
+                    <div
+                      key={photo.id || idx}
+                      className="bg-[#fcfdfd] border border-[#e2e8f0] rounded-xl p-3 shadow-2xs flex flex-col justify-between space-y-3"
+                    >
+                      {/* Image Thumbnail */}
+                      <div className="w-full aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 relative">
+                        <img
+                          src={normalizeImageUrl(photo.url)}
+                          alt={photo.caption || `Foto ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white rounded text-[10px] font-bold">
+                          #{idx + 1}
+                        </span>
+                      </div>
+
+                      {/* Caption Input */}
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-500 mb-0.5">
+                          Caption / Judul Foto:
+                        </label>
+                        <input
+                          type="text"
+                          value={photo.caption || ''}
+                          onChange={(e) => handleUpdateGalleryCaption(idx, e.target.value)}
+                          placeholder="Keterangan foto..."
+                          className="w-full px-2 py-1 text-xs rounded border border-gray-300 focus:border-[#5797d0] outline-none"
+                        />
+                      </div>
+
+                      {/* Actions: Reorder & Delete */}
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveGalleryPhoto(idx, 'up')}
+                            className="p-1 rounded hover:bg-gray-200 text-gray-600 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Geser ke kiri / atas"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === (formData.gallery?.length || 1) - 1}
+                            onClick={() => handleMoveGalleryPhoto(idx, 'down')}
+                            className="p-1 rounded hover:bg-gray-200 text-gray-600 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                            title="Geser ke kanan / bawah"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGalleryPhoto(idx)}
+                          className="px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Tombol Simpan Galeri */}
+              <div className="mt-6 pt-4 border-t border-[#e2e8f0] flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`px-5 py-2.5 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md cursor-pointer flex items-center gap-1.5 transition-all ${
+                    justSaved
+                      ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300'
+                      : 'bg-[#5797d0] hover:bg-[#4383bd] active:scale-95'
+                  }`}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan Galeri...</span>
+                    </>
+                  ) : justSaved ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                      <span>Galeri Berhasil Disimpan!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Simpan Perubahan Galeri</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TAB 4: HADIAH & REKENING */}
         {activeTab === 'kado' && (
           <div className="space-y-5">
@@ -4271,6 +4630,7 @@ Hormat kami,
                   <BrideGroomSection config={formData} />
                   <SaveTheDateSection config={formData} />
                   <EventDetailsSection config={formData} />
+                  <OurGallerySection config={formData} />
                   <LoveStorySection config={formData} />
                   <WeddingGiftSection config={formData} />
                 </div>
