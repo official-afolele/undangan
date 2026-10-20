@@ -3,6 +3,8 @@ import { WeddingConfig, GalleryPhoto } from '../types';
 import { normalizeImageUrl } from '../utils/imageUrl';
 import { Sparkles, X, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
+import { DEFAULT_COVER_PHOTO_BASE64 } from './coverPhotoBase64';
+
 interface OurGallerySectionProps {
   config: WeddingConfig;
 }
@@ -10,26 +12,17 @@ interface OurGallerySectionProps {
 export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
+  // Ambil daftar foto galeri dari config, atau fallback ke 2 foto prewedding pilihan
   const photos: GalleryPhoto[] = (config.gallery && config.gallery.length > 0)
     ? config.gallery
     : [
         {
-          id: '1',
-          url: config.couplePhoto || '/couple-cover.jpg',
-          caption: `${config.bride.name} & ${config.groom.name}`
+          id: 'gal_1',
+          url: config.bride?.photo || '/uploads/bride_photo.jpg',
+          caption: config.bride?.fullName || config.bride?.name || 'Harinurdian, S.E'
         },
         {
-          id: '2',
-          url: config.groom.photo || '/uploads/groom_photo.jpg',
-          caption: `${config.groom.fullName}`
-        },
-        {
-          id: '3',
-          url: config.bride.photo || '/uploads/bride_photo.jpg',
-          caption: `${config.bride.fullName}`
-        },
-        {
-          id: '4',
+          id: 'gal_2',
           url: '/couple-photo.jpg',
           caption: 'Menuju Hari Bahagia'
         }
@@ -77,6 +70,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
                 onClick={() => setSelectedPhotoIndex(index)}
                 className="group relative bg-white p-2 sm:p-2.5 rounded-2xl shadow-md hover:shadow-xl border border-[#5797d0]/15 transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
               >
+                {/* Image Container with 4:5 or 3:4 aspect ratio */}
                 <div className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-[#eaf4fa] relative">
                   <img
                     src={photoUrl}
@@ -85,8 +79,10 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       const target = e.currentTarget;
-                      if (!target.src.includes('couple-cover.jpg')) {
-                        target.src = '/couple-cover.jpg';
+                      if (!target.src.includes('couple-photo.jpg')) {
+                        target.src = '/couple-photo.jpg';
+                      } else {
+                        target.src = DEFAULT_COVER_PHOTO_BASE64;
                       }
                     }}
                     className="w-full h-full object-cover object-center group-hover:scale-108 transition-transform duration-500 ease-out"
@@ -100,6 +96,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
                   </div>
                 </div>
 
+                {/* Caption below photo */}
                 {photo.caption && (
                   <p className="font-patrick text-xs sm:text-sm text-[#5797d0] font-medium mt-2 truncate px-1 text-center">
                     {photo.caption}
@@ -119,6 +116,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
           onClick={handleCloseModal}
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 select-none animate-fade-in"
         >
+          {/* Close Button */}
           <button
             type="button"
             onClick={handleCloseModal}
@@ -128,6 +126,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
             <X className="w-6 h-6" />
           </button>
 
+          {/* Navigation Prev */}
           {photos.length > 1 && (
             <button
               type="button"
@@ -139,6 +138,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
             </button>
           )}
 
+          {/* Image & Caption Container */}
           <div
             onClick={(e) => e.stopPropagation()}
             className="max-w-lg w-full max-h-[85vh] flex flex-col items-center"
@@ -150,6 +150,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
               className="max-w-full max-h-[72vh] object-contain rounded-2xl shadow-2xl border border-white/20"
             />
 
+            {/* Caption & Counter */}
             <div className="mt-3 text-center text-white">
               <p className="font-patrick text-base sm:text-lg font-bold">
                 {photos[selectedPhotoIndex].caption || 'Our Prewedding Gallery'}
@@ -160,6 +161,7 @@ export const OurGallerySection: React.FC<OurGallerySectionProps> = ({ config }) 
             </div>
           </div>
 
+          {/* Navigation Next */}
           {photos.length > 1 && (
             <button
               type="button"
