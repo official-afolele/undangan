@@ -3302,12 +3302,31 @@ Hormat kami,
 
             {/* Daftar Foto Galeri yang Ada */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-[#e5ebf0]">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-bold text-[#2c3e50] flex items-center gap-1.5">
-                  <ImageIcon className="w-4 h-4 text-[#5797d0]" />
-                  <span>Koleksi Foto Galeri Saat Ini ({formData.gallery?.length || 0})</span>
-                </h3>
-                <span className="text-xs text-gray-500">Urutkan dengan panah ↑ ↓</span>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-[#2c3e50] flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#5797d0]" />
+                    <span>Koleksi Foto Galeri Saat Ini ({formData.gallery?.length || 0})</span>
+                  </h3>
+                  <span className="text-xs text-gray-500 hidden sm:inline">• Bebas tambah lebih dari 2 foto</span>
+                </div>
+
+                <label className="px-3.5 py-1.5 bg-[#5797d0] hover:bg-[#4886be] text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-xs active:scale-95">
+                  <Plus className="w-4 h-4" />
+                  <span>+ Tambah Foto #{ (formData.gallery?.length || 0) + 1 }</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={isUploadingGallery}
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files && files.length > 0) handleUploadGalleryPhotos(files);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
               </div>
 
               {(!formData.gallery || formData.gallery.length === 0) ? (
@@ -3419,6 +3438,34 @@ Hormat kami,
                       </div>
                     </div>
                   ))}
+
+                  {/* Kartu Tambah Foto Berikutnya (Slot #3, #4, dst.) */}
+                  <label className="border-2 border-dashed border-[#5797d0]/40 hover:border-[#5797d0] bg-[#f8fbfe] hover:bg-[#eaf4fa] rounded-xl p-4 flex flex-col items-center justify-center min-h-[220px] cursor-pointer transition-all group shadow-2xs hover:shadow-xs">
+                    <div className="w-12 h-12 rounded-full bg-[#5797d0]/10 group-hover:bg-[#5797d0] text-[#5797d0] group-hover:text-white flex items-center justify-center mb-2.5 transition-colors">
+                      <Plus className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-bold text-[#2c3e50] group-hover:text-[#5797d0] text-center">
+                      + Tambah Foto #{ (formData.gallery?.length || 0) + 1 }
+                    </span>
+                    <span className="text-[11px] text-[#527595] text-center mt-1 px-2 leading-relaxed">
+                      Klik untuk upload foto prewedding ke-{(formData.gallery?.length || 0) + 1} dari HP / Laptop
+                    </span>
+                    <span className="mt-2.5 px-3 py-1 bg-white border border-[#5797d0]/30 rounded-lg text-[11px] font-bold text-[#5797d0] shadow-2xs group-hover:border-[#5797d0]">
+                      Pilih Foto
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      disabled={isUploadingGallery}
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (files && files.length > 0) handleUploadGalleryPhotos(files);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
                 </div>
               )}
 
