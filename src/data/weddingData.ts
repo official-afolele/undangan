@@ -1,22 +1,113 @@
-gallery: [
+import { WeddingConfig } from '../types';
+
+export const weddingData: WeddingConfig = {
+  "groom": {
+    "name": "Jaka",
+    "fullName": "Jaka, S.Kom",
+    "role": "Groom",
+    "photo": "/uploads/groom_photo.jpg",
+    "parents": "Putra dari Bapak Asmarni dan Ibu Lamidah",
+    "father": "Bapak Asmarni",
+    "mother": "Ibu Lamidah",
+    "instagram": "@jaka.asmarni"
+  },
+  "bride": {
+    "name": "Dian",
+    "fullName": "Harinurdian, S.E",
+    "role": "Bride",
+    "photo": "/uploads/bride_photo.jpg",
+    "parents": "Putri dari Bapak Hatta, S.Pd.Sd dan Ibu Sumartik",
+    "father": "Bapak Hatta, S.Pd.Sd",
+    "mother": "Ibu Sumartik",
+    "instagram": "@harinurdian"
+  },
+  "couplePhoto": "/couple-cover.jpg",
+  "gallery": [
     {
-      id: 'gal_1',
-      url: '/uploads/bride_photo.jpg',
-      caption: 'Harinurdian, S.E'
+      "id": "gal_1",
+      "url": "/uploads/1.jpg",
+      "caption": ""
     },
     {
-      id: 'gal_2',
-      url: '/uploads/groom_photo.jpg',
-      caption: 'Jaka, S.Kom'
+      "id": "gal_2",
+      "url": "/uploads/2.jpg",
+      "caption": ""
     },
     {
-      id: 'gal_3',
-      url: '/couple-cover.jpg',
-      caption: 'Dian & Jaka'
+      "id": "gal_3",
+      "url": "/uploads/3.jpg",
+      "caption": ""
     },
     {
-      id: 'gal_4',
-      url: '/couple-photo.jpg',
-      caption: 'Menuju Hari Bahagia'
+      "id": "gal_4",
+      "url": "/uploads/4.jpg",
+      "caption": "Menuju Hari Bahagia"
+    },
+    {
+      "id": "gal_5",
+      "url": "/uploads/5.jpg",
+      "caption": ""
+    },
+    {
+      "id": "gal_6",
+      "url": "/uploads/6.jpg",
+      "caption": ""
     }
   ],
+  "eventDate": "2026-12-26T08:00:00+07:00",
+  "quote": "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda (kebesaran Allah) bagi kaum yang berpikir.",
+  "quoteSource": "Q.S Ar-Rum : 21",
+  "akad": {
+    "title": "Akad Nikah",
+    "dateStr": "Sabtu, 26 Desember 2026",
+    "isoDate": "2026-12-26",
+    "timeStr": "Pukul 08.00 WIB - Selesai",
+    "venueName": "Kediaman Mempelai Wanita",
+    "address": "Jalan Pashanda Bhakti, RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat",
+    "mapsUrl": "https://maps.app.goo.gl/PJBKEHqAw4uwG5Ms8"
+  },
+  "resepsi": {
+    "title": "Resepsi Pernikahan",
+    "dateStr": "Minggu, 27 Desember 2026",
+    "isoDate": "2026-12-27",
+    "timeStr": "Pukul 14.00 - 19.00 WIB",
+    "venueName": "Kediaman Mempelai Wanita",
+    "address": "Jalan Pashanda Bhakti, RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipit Teja, Kec. Teluk Keramat",
+    "mapsUrl": "https://maps.app.goo.gl/PJBKEHqAw4uwG5Ms8"
+  },
+  "stories": [
+    {
+      "title": "Awal Pertemuan",
+      "story": "Takdir mempertemukan kami di sebuah momen sederhana. Berawal dari percakapan hangat yang kemudian menumbuhkan rasa saling mengerti dan nyaman satu sama lain."
+    },
+    {
+      "title": "Menjalin Komitmen",
+      "story": "Setelah melewati banyak cerita suka dan duka bersama, kami sepakat untuk melangkah ke jenjang yang lebih serius dengan restu dan doa kedua orang tua kami."
+    },
+    {
+      "title": "Menuju Hari Bahagia",
+      "story": "Dengan memohon ridho Allah SWT, kami memutuskan untuk mengikat janji suci pernikahan, membangun keluarga sakinah, mawaddah, warahmah."
+    }
+  ],
+  "bank": {
+    "bankName": "BANK BSI SYARIAH",
+    "accountNumber": "7265469374",
+    "accountHolder": "HARI NURDIAN"
+  },
+  "bankAccounts": [
+    {
+      "bankName": "BANK BSI SYARIAH",
+      "accountNumber": "7265469374",
+      "accountHolder": "HARI NURDIAN"
+    }
+  ],
+  "giftAddress": {
+    "recipient": "Dian",
+    "fullAddress": "Jl. Pashanda Bhakti RT 004 RW 002, Dusun Pangkalan Betung, Desa Pipitteja, Kec. Teluk Keramat, Kab. Sambas"
+  },
+  "musicTitle": "Cinta Terakhir (Cover)",
+  "musicArtist": "Ari Lasso / Cover",
+  "audioUrl": "https://wedding-invitations-chi.vercel.app/audio/cinta_terakhir_cover1.mp3",
+  "googleScriptUrl": "https://script.google.com/macros/s/AKfycbwA00OdawslIH2qo8JE2owYGo_a2c22JLjMWfuWIoRREwe8fYNccMGKBiIOQOcIaxbjQA/exec",
+  "customDomain": "https://ayonikah.web.id"
+};
